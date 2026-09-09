@@ -9,9 +9,14 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddAutoMapper(cfg => 
+{
+	cfg.AddMaps(typeof(Program).Assembly);
+});
+
 builder.Services.AddDbContext<ApplicationDbContext>(opts => 
 {
-	opts.UseSqlServer(builder.Configuration["ConnectionStrings:DefaultConnection"]);
+	opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
 var app = builder.Build();
