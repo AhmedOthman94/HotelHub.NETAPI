@@ -1,11 +1,19 @@
+using FluentValidation;
 using HotelHub.API.Data;
+using HotelHub.API.Validators;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+builder.Services.AddValidatorsFromAssemblyContaining<CreateCountryDtoValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UpdateCountryDtoValidator>();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -25,6 +33,14 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
 	app.MapOpenApi();
+	app.MapScalarApiReference(opts =>
+	{
+		opts.WithTitle("HotelHub API")
+			.WithDefaultHttpClient(
+				ScalarTarget.CSharp,
+				ScalarClient.HttpClient)
+			.WithTheme(ScalarTheme.Solarized);
+	});
 }
 
 app.UseHttpsRedirection();
