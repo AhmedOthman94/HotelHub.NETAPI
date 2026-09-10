@@ -7,5 +7,6 @@
 		public AddressDto Address { get; set; } = new();
 		public decimal Rating { get; set; }
 		public Guid CountryId { get; set; }
+		public CountryDto? Country { get; set; }
 	}
 }
