@@ -3,6 +3,7 @@ using FluentValidation;
 using HotelHub.API.Data;
 using HotelHub.API.DTOs;
 using HotelHub.API.Entity;
+using HotelHub.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,8 +20,8 @@ namespace HotelHub.API.Controllers
 	: ControllerBase
 	{
 		[HttpGet]
-		[ProducesResponseType(typeof(IEnumerable<HotelDto>), StatusCodes.Status200OK)]
-		public async Task<ActionResult<IEnumerable<HotelDto>>> GetAllHotels()
+		[ProducesResponseType(typeof(ApiResponse<IEnumerable<HotelDto>>), StatusCodes.Status200OK)]
+		public async Task<ActionResult<ApiResponse<IEnumerable<HotelDto>>>> GetAllHotels()
 		{
 			var hotels = await context.Hotels
 									   .AsNoTracking()
@@ -30,13 +31,18 @@ namespace HotelHub.API.Controllers
 
 			var hotelsDto = mapper.Map<IEnumerable<HotelDto>>(hotels);
 
-			return Ok(hotelsDto);
+			var response = ApiResponse<IEnumerable<HotelDto>>.Ok(
+												hotelsDto,
+												"Hotels retrieved successfully."
+			);
+
+			return Ok(response);
 		}
 
 		[HttpGet("{id:Guid}", Name = "GetHotelById")]
-		[ProducesResponseType(typeof(HotelDto), StatusCodes.Status200OK)]
-		[ProducesResponseType(StatusCodes.Status404NotFound)]
-		public async Task<ActionResult<HotelDto>> GetHotelById(Guid id)
+		[ProducesResponseType(typeof(ApiResponse<HotelDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+		public async Task<ActionResult<ApiResponse<HotelDto>>> GetHotelById(Guid id)
 		{
 			var hotel = await context.Hotels
 									  .AsNoTracking()
@@ -45,18 +51,27 @@ namespace HotelHub.API.Controllers
 
 			if (hotel is null)
 			{
-				return NotFound($"Hotel with ID: {id} was not found.");
+				var response = ApiResponse<object>.NotFound(
+									$"Hotel with ID: {id} was not found."
+				);
+
+				return NotFound(response);
 			}
 
 			var hotelDto = mapper.Map<HotelDto>(hotel);
 
-			return Ok(hotelDto);
+			var successResponse = ApiResponse<HotelDto>.Ok(
+								hotelDto,
+								"Hotel retrieved successfully."
+			);
+
+			return Ok(successResponse);
 		}
 
 		[HttpPost]
-		[ProducesResponseType(typeof(HotelDto), StatusCodes.Status201Created)]
-		[ProducesResponseType(StatusCodes.Status400BadRequest)]
-		public async Task<ActionResult<HotelDto>> CreateHotel(
+		[ProducesResponseType(typeof(ApiResponse<HotelDto>), StatusCodes.Status201Created)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<HotelDto>>> CreateHotel(
 							[FromBody] CreateHotelDto dto
 		)
 		{
@@ -64,26 +79,37 @@ namespace HotelHub.API.Controllers
 
 			if (!validationResult.IsValid)
 			{
-				return BadRequest(validationResult.Errors);
+				var response = ApiResponse<object>.BadRequest(
+									"Validation failed.",
+									validationResult.Errors
+				);
+
+				return BadRequest(response);
 			}
 
 			var hotel = mapper.Map<Hotel>(dto);
 
 			context.Hotels.Add(hotel);
+
 			await context.SaveChangesAsync();
 
 			var hotelDto = mapper.Map<HotelDto>(hotel);
 
+			var successResponse = ApiResponse<HotelDto>.CreatedAt(
+									hotelDto,
+									"Hotel created successfully."
+			);
+
 			return CreatedAtAction(
 						nameof(GetHotelById),
 						new { id = hotel.Id },
-						hotelDto
+						successResponse
 			);
 		}
 
 		[HttpPut("{id:Guid}")]
-		[ProducesResponseType(StatusCodes.Status400BadRequest)]
-		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
 		public async Task<IActionResult> UpdateHotel(
 								[FromRoute] Guid id,
@@ -94,12 +120,21 @@ namespace HotelHub.API.Controllers
 
 			if (!validationResult.IsValid)
 			{
-				return BadRequest(validationResult.Errors);
+				var response = ApiResponse<object>.BadRequest(
+									"Validation failed.",
+									validationResult.Errors
+				);
+
+				return BadRequest(response);
 			}
 
 			if (id != dto.Id)
 			{
-				return BadRequest("Mismatch Id from route with Id from body.");
+				var response = ApiResponse<object>.BadRequest(
+									"Mismatch Id from route with Id from body."
+				);
+
+				return BadRequest(response);
 			}
 
 			var hotel = await context.Hotels
@@ -107,7 +142,11 @@ namespace HotelHub.API.Controllers
 
 			if (hotel is null)
 			{
-				return NotFound($"Hotel with ID: {id} was not found.");
+				var response = ApiResponse<object>.NotFound(
+									$"Hotel with ID: {id} was not found."
+				);
+
+				return NotFound(response);
 			}
 
 			mapper.Map(dto, hotel);
@@ -118,7 +157,7 @@ namespace HotelHub.API.Controllers
 		}
 
 		[HttpDelete("{id:Guid}")]
-		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
 		public async Task<IActionResult> DeleteHotel(Guid id)
 		{
@@ -127,7 +166,11 @@ namespace HotelHub.API.Controllers
 
 			if (hotel is null)
 			{
-				return NotFound($"Hotel with ID: {id} was not found.");
+				var response = ApiResponse<object>.NotFound(
+									$"Hotel with ID: {id} was not found."
+				);
+
+				return NotFound(response);
 			}
 
 			context.Hotels.Remove(hotel);
