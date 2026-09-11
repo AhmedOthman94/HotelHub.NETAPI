@@ -1,5 +1,7 @@
 using FluentValidation;
 using HotelHub.API.Data;
+using HotelHub.API.Services;
+using HotelHub.API.Services.IServices;
 using HotelHub.API.Validators;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
@@ -26,6 +28,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(opts =>
 {
 	opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+
+builder.Services.AddScoped<ICountryService, CountryService>();
 
 var app = builder.Build();
 

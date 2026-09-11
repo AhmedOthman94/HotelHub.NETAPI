@@ -1,21 +1,17 @@
-﻿using AutoMapper;
-using FluentValidation;
-using HotelHub.API.Data;
+﻿using FluentValidation;
 using HotelHub.API.DTOs;
-using HotelHub.API.Entity;
 using HotelHub.API.Models;
+using HotelHub.API.Services.IServices;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace HotelHub.API.Controllers
 {
 	[Route("api/countries")]
 	[ApiController]
-	public class CountriesController (
-							ApplicationDbContext context,
+	public class CountriesController(
+							ICountryService service,
 							IValidator<CreateCountryDto> createValidator,
-							IValidator<UpdateCountryDto> updateValidator,
-							IMapper mapper
+							IValidator<UpdateCountryDto> updateValidator
 	)
 	: ControllerBase
 	{
@@ -23,14 +19,10 @@ namespace HotelHub.API.Controllers
 		[ProducesResponseType(typeof(ApiResponse<IEnumerable<CountryDto>>), StatusCodes.Status200OK)]
 		public async Task<ActionResult<ApiResponse<IEnumerable<CountryDto>>>> GetAllCountries()
 		{
-			var countries = await context.Countries
-										.AsNoTracking()
-										.OrderBy(c => c.Name)
-										.ToListAsync();
+			var countries = await service.GetAllCountriesAsync();
 
-			var countriesDto = mapper.Map<IEnumerable<CountryDto>>(countries);
-
-			var response = ApiResponse<IEnumerable<CountryDto>>.Ok(countriesDto,
+			var response = ApiResponse<IEnumerable<CountryDto>>.Ok(
+												countries,
 												"Countries retrieved successfully."
 			);
 
@@ -42,20 +34,19 @@ namespace HotelHub.API.Controllers
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
 		public async Task<ActionResult<ApiResponse<CountryDto>>> GetCountryById(Guid id)
 		{
-			var country = await context.Countries
-									.AsNoTracking()
-									.FirstOrDefaultAsync(c => c.Id == id);
-			if (country is null) 
+			var country = await service.GetCountryByIdAsync(id);
+
+			if (country is null)
 			{
-				var response = ApiResponse<object>
-								.NotFound($"Country with ID: {id} was not found.");
+				var response = ApiResponse<object>.NotFound(
+									$"Country with ID: {id} was not found."
+				);
 
 				return NotFound(response);
 			}
 
-			var countryDto = mapper.Map<CountryDto>(country);
-
-			var successResponse = ApiResponse<CountryDto>.Ok(countryDto,
+			var successResponse = ApiResponse<CountryDto>.Ok(
+								country,
 								"Country retrieved successfully."
 			);
 
@@ -73,21 +64,18 @@ namespace HotelHub.API.Controllers
 
 			if (!validationResult.IsValid)
 			{
-				var response = ApiResponse<object>.BadRequest("Validation failed.", 
-									validationResult.Errors	
+				var response = ApiResponse<object>.BadRequest(
+									"Validation failed.",
+									validationResult.Errors
 				);
 
 				return BadRequest(response);
 			}
 
-			var country = mapper.Map<Country>(dto);
+			var country = await service.CreateCountryAsync(dto);
 
-			context.Countries.Add(country);
-			await context.SaveChangesAsync();
-
-			var countryDto = mapper.Map<CountryDto>(country);
-
-			var successResponse = ApiResponse<CountryDto>.CreatedAt(countryDto,
+			var successResponse = ApiResponse<CountryDto>.CreatedAt(
+									country,
 									"Country created successfully."
 			);
 
@@ -108,25 +96,29 @@ namespace HotelHub.API.Controllers
 		)
 		{
 			var validationResult = await updateValidator.ValidateAsync(dto);
+
 			if (!validationResult.IsValid)
 			{
-				var response = ApiResponse<object>.BadRequest("Validation failed.",
-										validationResult.Errors
+				var response = ApiResponse<object>.BadRequest(
+									"Validation failed.",
+									validationResult.Errors
 				);
+
 				return BadRequest(response);
 			}
 
 			if (id != dto.Id)
 			{
 				var response = ApiResponse<object>.BadRequest(
-											"Mismatch Id from route with Id from body.");
+									"Mismatch ID from route with ID from body."
+				);
 
 				return BadRequest(response);
 			}
 
-			var country = await context.Countries
-										.FirstOrDefaultAsync(c => c.Id == id);
-			if (country is null) 
+			var updated = await service.UpdateCountryAsync(id, dto);
+
+			if (!updated)
 			{
 				var response = ApiResponse<object>.NotFound(
 									$"Country with ID: {id} was not found."
@@ -134,9 +126,6 @@ namespace HotelHub.API.Controllers
 
 				return NotFound(response);
 			}
-
-			mapper.Map(dto, country);
-			await context.SaveChangesAsync();
 
 			return NoContent();
 		}
@@ -146,9 +135,9 @@ namespace HotelHub.API.Controllers
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
 		public async Task<IActionResult> DeleteCountry(Guid id)
 		{
-			var country = await context.Countries
-										.FirstOrDefaultAsync( c => c.Id == id);
-			if ( country is null )
+			var deleted = await service.DeleteCountryByIdAsync(id);
+
+			if (!deleted)
 			{
 				var response = ApiResponse<object>.NotFound(
 									$"Country with ID: {id} was not found."
@@ -156,9 +145,6 @@ namespace HotelHub.API.Controllers
 
 				return NotFound(response);
 			}
-
-			context.Countries.Remove(country);
-			await context.SaveChangesAsync();
 
 			return NoContent();
 		}
