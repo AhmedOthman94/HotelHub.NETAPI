@@ -3,6 +3,7 @@ using FluentValidation;
 using HotelHub.API.Data;
 using HotelHub.API.DTOs;
 using HotelHub.API.Entity;
+using HotelHub.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,8 +20,8 @@ namespace HotelHub.API.Controllers
 	: ControllerBase
 	{
 		[HttpGet]
-		[ProducesResponseType(typeof(IEnumerable<CountryDto>), StatusCodes.Status200OK)]
-		public async Task<ActionResult<IEnumerable<CountryDto>>> GetAllCountries()
+		[ProducesResponseType(typeof(ApiResponse<IEnumerable<CountryDto>>), StatusCodes.Status200OK)]
+		public async Task<ActionResult<ApiResponse<IEnumerable<CountryDto>>>> GetAllCountries()
 		{
 			var countries = await context.Countries
 										.AsNoTracking()
@@ -29,31 +30,42 @@ namespace HotelHub.API.Controllers
 
 			var countriesDto = mapper.Map<IEnumerable<CountryDto>>(countries);
 
-			return Ok(countriesDto);
+			var response = ApiResponse<IEnumerable<CountryDto>>.Ok(countriesDto,
+												"Countries retrieved successfully."
+			);
+
+			return Ok(response);
 		}
 
 		[HttpGet("{id:Guid}", Name = "GetCountryById")]
-		[ProducesResponseType(typeof(CountryDto), StatusCodes.Status200OK)]
-		[ProducesResponseType(StatusCodes.Status404NotFound)]
-		public async Task<ActionResult<CountryDto>> GetCountryById(Guid id)
+		[ProducesResponseType(typeof(ApiResponse<CountryDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+		public async Task<ActionResult<ApiResponse<CountryDto>>> GetCountryById(Guid id)
 		{
 			var country = await context.Countries
 									.AsNoTracking()
 									.FirstOrDefaultAsync(c => c.Id == id);
 			if (country is null) 
 			{
-				return NotFound($"Country with ID: {id} was not found.");
+				var response = ApiResponse<object>
+								.NotFound($"Country with ID: {id} was not found.");
+
+				return NotFound(response);
 			}
 
 			var countryDto = mapper.Map<CountryDto>(country);
 
-			return Ok(countryDto);
+			var successResponse = ApiResponse<CountryDto>.Ok(countryDto,
+								"Country retrieved successfully."
+			);
+
+			return Ok(successResponse);
 		}
 
 		[HttpPost]
-		[ProducesResponseType(typeof(CountryDto), StatusCodes.Status201Created)]
-		[ProducesResponseType(StatusCodes.Status400BadRequest)]
-		public async Task<ActionResult<CountryDto>> CreateCountry(
+		[ProducesResponseType(typeof(ApiResponse<CountryDto>), StatusCodes.Status201Created)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<CountryDto>>> CreateCountry(
 							[FromBody] CreateCountryDto dto
 		)
 		{
@@ -61,7 +73,11 @@ namespace HotelHub.API.Controllers
 
 			if (!validationResult.IsValid)
 			{
-				return BadRequest(validationResult.Errors);
+				var response = ApiResponse<object>.BadRequest("Validation failed.", 
+									validationResult.Errors	
+				);
+
+				return BadRequest(response);
 			}
 
 			var country = mapper.Map<Country>(dto);
@@ -71,16 +87,20 @@ namespace HotelHub.API.Controllers
 
 			var countryDto = mapper.Map<CountryDto>(country);
 
+			var successResponse = ApiResponse<CountryDto>.CreatedAt(countryDto,
+									"Country created successfully."
+			);
+
 			return CreatedAtAction(
 						nameof(GetCountryById),
 						new { id = country.Id },
-						countryDto
+						successResponse
 			);
 		}
 
 		[HttpPut("{id:Guid}")]
-		[ProducesResponseType(StatusCodes.Status400BadRequest)]
-		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
 		public async Task<IActionResult> UpdateCountry(
 								[FromRoute] Guid id,
@@ -90,19 +110,29 @@ namespace HotelHub.API.Controllers
 			var validationResult = await updateValidator.ValidateAsync(dto);
 			if (!validationResult.IsValid)
 			{
-				return BadRequest(validationResult.Errors);
+				var response = ApiResponse<object>.BadRequest("Validation failed.",
+										validationResult.Errors
+				);
+				return BadRequest(response);
 			}
 
 			if (id != dto.Id)
 			{
-				return BadRequest("Mismatch Id from route with Id from body.");
+				var response = ApiResponse<object>.BadRequest(
+											"Mismatch Id from route with Id from body.");
+
+				return BadRequest(response);
 			}
 
 			var country = await context.Countries
 										.FirstOrDefaultAsync(c => c.Id == id);
 			if (country is null) 
 			{
-				return NotFound($"Country with ID: {id} was not found.");
+				var response = ApiResponse<object>.NotFound(
+									$"Country with ID: {id} was not found."
+				);
+
+				return NotFound(response);
 			}
 
 			mapper.Map(dto, country);
@@ -112,7 +142,7 @@ namespace HotelHub.API.Controllers
 		}
 
 		[HttpDelete("{id:Guid}")]
-		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
 		public async Task<IActionResult> DeleteCountry(Guid id)
 		{
@@ -120,7 +150,11 @@ namespace HotelHub.API.Controllers
 										.FirstOrDefaultAsync( c => c.Id == id);
 			if ( country is null )
 			{
-				return NotFound($"Country with ID: {id} was not found.");
+				var response = ApiResponse<object>.NotFound(
+									$"Country with ID: {id} was not found."
+				);
+
+				return NotFound(response);
 			}
 
 			context.Countries.Remove(country);
