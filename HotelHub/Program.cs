@@ -30,6 +30,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(opts =>
 });
 
 builder.Services.AddScoped<ICountryService, CountryService>();
+builder.Services.AddScoped<IHotelService, HotelService>();
 
 var app = builder.Build();
 
