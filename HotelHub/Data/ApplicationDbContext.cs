@@ -1,10 +1,16 @@
 ﻿using HotelHub.API.Entity;
+using HotelHub.API.Models.Auth;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelHub.API.Data
 {
-	public class ApplicationDbContext (DbContextOptions<ApplicationDbContext> options)
-	: DbContext(options)
+	public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+	: IdentityDbContext<ApplicationUser,
+							IdentityRole<Guid>,
+							Guid>
+	(options)
 	{
 		public DbSet<Country> Countries { get; set; }
 		public DbSet<Hotel> Hotels { get; set; }

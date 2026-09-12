@@ -3,9 +3,14 @@ using HotelHub.API.Data;
 using HotelHub.API.Services;
 using HotelHub.API.Services.IServices;
 using HotelHub.API.Validators;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 using Scalar.AspNetCore;
-
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using HotelHub.API.Models.Auth;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +22,40 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateCountryDtoValidator>(
 builder.Services.AddValidatorsFromAssemblyContaining<UpdateCountryDtoValidator>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi("v1", opts => 
+{
+	opts.AddDocumentTransformer((document, context, CancellationToken) => 
+	{
+		document.Info = new() 
+		{
+			Title = "HotelHub API",
+			Version = context.DocumentName,
+			Description = "A hotel management and booking API for managing countries, hotels, and room reservations."
+		};
+
+		document.Components ??= new OpenApiComponents();
+		document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+		document.Components.SecuritySchemes.Add("Bearer", new OpenApiSecurityScheme 
+		{
+			Type = SecuritySchemeType.Http,
+			Scheme = "bearer",
+			BearerFormat = "JWT",
+			Description = "Enter your Bearer token to access protected endpoints."
+		});
+
+		document.Security = [
+			new OpenApiSecurityRequirement
+			{
+				{
+					new OpenApiSecuritySchemeReference("Bearer"),
+					[]
+				}
+			}
+		];
+
+		return Task.CompletedTask;
+	});
+});
 
 builder.Services.AddAutoMapper(cfg => 
 {
@@ -31,6 +69,50 @@ builder.Services.AddDbContext<ApplicationDbContext>(opts =>
 
 builder.Services.AddScoped<ICountryService, CountryService>();
 builder.Services.AddScoped<IHotelService, HotelService>();
+
+// Identity
+builder.Services.AddIdentityCore<ApplicationUser>()
+				.AddRoles<IdentityRole<Guid>>()
+				.AddEntityFrameworkStores<ApplicationDbContext>()
+				.AddDefaultTokenProviders();
+
+// Identity options
+builder.Services.Configure<IdentityOptions>(opts => 
+{
+	opts.User.RequireUniqueEmail = true;
+
+	opts.Password.RequiredLength = 8;
+	opts.Password.RequireUppercase = true;
+	opts.Password.RequireLowercase = true;
+	opts.Password.RequireDigit = true;
+	opts.Password.RequireNonAlphanumeric = true;
+});
+
+// JWT
+var jwtKey = builder.Configuration["Jwt:Key"]
+		?? throw new InvalidOperationException("JWT Key is not configured.");
+var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+
+
+builder.Services.AddAuthentication(opts => 
+{
+	opts.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+	opts.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+	opts.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(opts => 
+{
+	opts.TokenValidationParameters = new TokenValidationParameters 
+	{
+		ValidateIssuer = true,
+		ValidIssuer = builder.Configuration["Jwt:Issuer"],
+		ValidateAudience = true,
+		ValidAudience = builder.Configuration["Jwt:Audience"],
+		ValidateIssuerSigningKey = true,
+		IssuerSigningKey = key,
+		ValidateLifetime = true,
+		ClockSkew = TimeSpan.Zero
+	};
+});
 
 var app = builder.Build();
 
@@ -49,7 +131,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
