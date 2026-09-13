@@ -69,6 +69,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(opts =>
 
 builder.Services.AddScoped<ICountryService, CountryService>();
 builder.Services.AddScoped<IHotelService, HotelService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 // Identity
 builder.Services.AddIdentityCore<ApplicationUser>()
@@ -115,6 +116,21 @@ builder.Services.AddAuthentication(opts =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+	var roleManager = scope.ServiceProvider
+				.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+
+	var userManager = scope.ServiceProvider
+					.GetRequiredService<UserManager<ApplicationUser>>();
+
+	await IdentitySeeder.SeedRoleAsync(roleManager);
+
+	await IdentitySeeder.SeedAdminAsync(
+		userManager, builder.Configuration
+	);
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

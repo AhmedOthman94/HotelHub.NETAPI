@@ -17,23 +17,43 @@ namespace HotelHub.API.Controllers
 	: ControllerBase
 	{
 		[HttpPost("register")]
-		public async Task<IActionResult> Register(
-													[FromBody] RegisterRequestDto dto)
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<object>>> Register(
+										[FromBody] RegisterRequestDto dto)
 		{
 			var user = new ApplicationUser
 			{
 				FirstName = dto.FirstName,
 				LastName = dto.LastName,
 				Email = dto.Email,
+				UserName = dto.Email
 			};
 
-			var result = await userManager.CreateAsync(user, dto.Password);
+			var result = await userManager.CreateAsync(
+				user,
+				dto.Password
+			);
+
 			if (!result.Succeeded)
 			{
-				return BadRequest(result.Errors);
+				var response = ApiResponse<object>.BadRequest(
+					"User registration failed.",
+					result.Errors
+				);
+
+				return BadRequest(response);
 			}
 
-			return Ok(new { Message = "User registered successfully." });
+			var successResponse = ApiResponse<object>.CreatedAt(
+				null,
+				"User registered successfully."
+			);
+
+			return StatusCode(
+				StatusCodes.Status201Created,
+				successResponse
+			);
 		}
 
 		[HttpPost("login")]
@@ -199,11 +219,12 @@ namespace HotelHub.API.Controllers
 
 			if (!existingToken.IsActive)
 			{
-				var response = ApiResponse<object>.BadRequest(
-					"This token is already revoked or expired."
+				var response = ApiResponse<object>.Error(
+					StatusCodes.Status401Unauthorized,
+					"Invalid refresh token."
 				);
 
-				return BadRequest(response);
+				return Unauthorized(response);
 			}
 
 			existingToken.Revoked = DateTime.UtcNow;

@@ -1,11 +1,13 @@
 ﻿using HotelHub.API.Models;
 using HotelHub.API.Models.Auth;
 using HotelHub.API.Models.Auth.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HotelHub.API.Controllers
 {
+	[Authorize(Roles = "Admin")]
 	[Route("api/role")]
 	[ApiController]
 	public class RoleController(

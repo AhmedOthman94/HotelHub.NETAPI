@@ -29,7 +29,7 @@ namespace HotelHub.API.Services
 				new Claim(ClaimTypes.Name, user.UserName ?? ""),
 				new Claim(ClaimTypes.Email, user.Email ?? ""),
 
-				new Claim("fisrtName", user.FirstName),
+				new Claim("firstName", user.FirstName),
 				new Claim("lastName", user.LastName)
 			};
 
