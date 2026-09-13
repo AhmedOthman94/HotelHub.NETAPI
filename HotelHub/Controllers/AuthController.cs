@@ -2,6 +2,7 @@
 using HotelHub.API.Models.Auth;
 using HotelHub.API.Models.Auth.DTOs;
 using HotelHub.API.Services.IServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -16,6 +17,7 @@ namespace HotelHub.API.Controllers
 								ITokenService tokenService)
 	: ControllerBase
 	{
+		[AllowAnonymous]
 		[HttpPost("register")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -45,6 +47,8 @@ namespace HotelHub.API.Controllers
 				return BadRequest(response);
 			}
 
+			await userManager.AddToRoleAsync(user, "User");
+
 			var successResponse = ApiResponse<object>.CreatedAt(
 				null,
 				"User registered successfully."
@@ -56,6 +60,7 @@ namespace HotelHub.API.Controllers
 			);
 		}
 
+		[AllowAnonymous]
 		[HttpPost("login")]
 		[ProducesResponseType(typeof(ApiResponse<TokenResponseDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -112,6 +117,7 @@ namespace HotelHub.API.Controllers
 			return Ok(successResponse);
 		}
 
+		[AllowAnonymous]
 		[HttpPost("refresh-token")]
 		[ProducesResponseType(typeof(ApiResponse<TokenResponseDto>),StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status401Unauthorized)]
@@ -182,6 +188,7 @@ namespace HotelHub.API.Controllers
 			return Ok(responseSuccess);
 		}
 
+		[AllowAnonymous]
 		[HttpPost("revoke")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HotelHub.API.Controllers
 {
-	[Authorize(Roles = "Admin")]
+	[Authorize(Policy = "AdminOnly")]
 	[Route("api/role")]
 	[ApiController]
 	public class RoleController(

@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using HotelHub.API.Models.Auth;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -115,6 +116,24 @@ builder.Services.AddAuthentication(opts =>
 	};
 });
 
+builder.Services.AddAuthorizationBuilder()
+	.AddPolicy("AdminOnly", policy =>
+	{
+		policy.RequireRole("Admin");
+	})
+	.AddPolicy("UserOnly", policy =>
+	{
+		policy.RequireRole("User");
+	})
+	.AddPolicy("AuthenticatedUser", policy =>
+	{
+		policy.RequireAuthenticatedUser();
+	})
+	.SetFallbackPolicy(new AuthorizationPolicyBuilder()
+		.RequireAuthenticatedUser()
+		.Build());
+
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -135,7 +154,9 @@ using (var scope = app.Services.CreateScope())
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-	app.MapOpenApi();
+	app.MapOpenApi()
+		.AllowAnonymous();
+
 	app.MapScalarApiReference(opts =>
 	{
 		opts.WithTitle("HotelHub API")
@@ -143,7 +164,9 @@ if (app.Environment.IsDevelopment())
 				ScalarTarget.CSharp,
 				ScalarClient.HttpClient)
 			.WithTheme(ScalarTheme.Solarized);
-	});
+
+	})
+	.AllowAnonymous();
 }
 
 app.UseHttpsRedirection();

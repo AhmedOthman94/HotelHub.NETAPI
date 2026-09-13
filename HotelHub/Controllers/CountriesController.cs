@@ -2,6 +2,7 @@
 using HotelHub.API.DTOs;
 using HotelHub.API.Models;
 using HotelHub.API.Services.IServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HotelHub.API.Controllers
@@ -53,6 +54,7 @@ namespace HotelHub.API.Controllers
 			return Ok(successResponse);
 		}
 
+		[Authorize(Policy = "AdminOnly")]
 		[HttpPost]
 		[ProducesResponseType(typeof(ApiResponse<CountryDto>), StatusCodes.Status201Created)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -86,6 +88,7 @@ namespace HotelHub.API.Controllers
 			);
 		}
 
+		[Authorize(Policy = "AdminOnly")]
 		[HttpPut("{id:Guid}")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -130,6 +133,7 @@ namespace HotelHub.API.Controllers
 			return NoContent();
 		}
 
+		[Authorize(Policy = "AdminOnly")]
 		[HttpDelete("{id:Guid}")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
