@@ -53,6 +53,10 @@ namespace HotelHub.API.Validators
 				.InclusiveBetween(0, 5)
 				.WithMessage("Rating must be between 0 and 5.");
 
+			RuleFor(hotel => hotel.PerNight)
+				.GreaterThan(0)
+				.WithMessage("Price per night must be greater than 0.");
+
 			RuleFor(hotel => hotel.CountryId)
 				.NotEmpty()
 				.WithMessage("Country ID is required.");
