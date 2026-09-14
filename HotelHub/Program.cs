@@ -71,6 +71,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(opts =>
 builder.Services.AddScoped<ICountryService, CountryService>();
 builder.Services.AddScoped<IHotelService, HotelService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
 
 // Identity
 builder.Services.AddIdentityCore<ApplicationUser>()
