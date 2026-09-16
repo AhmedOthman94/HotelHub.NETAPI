@@ -17,6 +17,8 @@ namespace HotelHub.API.Data
 		public DbSet<HotelAdmin> HotelAdmins { get; set; }
 		public DbSet<Booking> Bookings {  get; set; }
 
+		public DbSet<Room> Rooms { get; set; }
+
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
 			base.OnModelCreating(modelBuilder);

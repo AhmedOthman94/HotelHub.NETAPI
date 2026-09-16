@@ -1,4 +1,6 @@
-﻿namespace HotelHub.API.Entity
+﻿using System.Collections.ObjectModel;
+
+namespace HotelHub.API.Entity
 {
 	public class Hotel
 	{
@@ -16,5 +18,7 @@
 		public ICollection<HotelAdmin> HotelAdmins { get; set; } = [];
 
 		public ICollection<Booking> Bookings { get; set; } = [];
+
+		public Collection<Room> Rooms { get; set; } = [];
 	}
 }
