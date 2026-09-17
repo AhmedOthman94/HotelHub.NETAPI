@@ -7,10 +7,6 @@ namespace HotelHub.API.Validators
 	{
 		public UpdateBookingDtoValidator()
 		{
-			RuleFor(booking => booking.Id)
-				.NotEmpty()
-				.WithMessage("Booking ID is required.");
-
 			RuleFor(booking => booking.CheckIn)
 				.GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow.Date))
 				.WithMessage("Check-in date cannot be in the past.");

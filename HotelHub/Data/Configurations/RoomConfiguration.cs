@@ -14,7 +14,15 @@ namespace HotelHub.API.Data.Configurations
 					.IsRequired()
 					.HasMaxLength(20);
 
+			builder.Property(r => r.RoomType)
+					.HasConversion<string>()
+					.IsRequired();
+
 			builder.Property(r => r.Capacity)
+					.IsRequired();
+
+			builder.Property(r => r.PricePerNight)
+					.HasPrecision(18, 2)
 					.IsRequired();
 
 			builder.HasOne(r => r.Hotel)

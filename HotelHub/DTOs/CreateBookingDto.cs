@@ -2,7 +2,7 @@
 {
 	public class CreateBookingDto
 	{
-		public Guid HotelId { get; set; }
+		public Guid RoomId { get; set; }
 
 		public DateOnly CheckIn { get; set; }
 

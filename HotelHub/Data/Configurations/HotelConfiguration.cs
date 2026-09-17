@@ -17,9 +17,6 @@ namespace HotelHub.API.Data.Configurations
 			builder.Property(h => h.Rating)
 				.HasPrecision(2, 1);
 
-			builder.Property(h => h.PerNight)
-					.HasPrecision(18, 2);
-
 			builder.ComplexProperty(h => h.Address, address => 
 			{
 				address.Property(a => a.Street)

@@ -12,9 +12,18 @@ namespace HotelHub.API.Validators
 				.MaximumLength(20)
 				.WithMessage("Room number is required, and cannot exceed 20 characters.");
 
+			RuleFor(room => room.RoomType)
+				.IsInEnum()
+				.WithMessage("Invalid room type.");
+
 			RuleFor(room => room.Capacity)
 				.GreaterThan(0)
 				.WithMessage("Room capacity must be greater than zero.");
+
+			RuleFor(room => room.PricePerNight)
+				.GreaterThan(0)
+				.WithMessage(
+					"Room price per night must be greater than 0.");
 		}
 	}
 }

@@ -5,25 +5,25 @@ namespace HotelHub.API.Services.IServices
 	public interface IBookingService
 	{
 		Task<IEnumerable<BookingDto>> GetAllAsync(
-				Guid hotelId);
+				Guid roomId);
 
 		Task<BookingDto?> GetByIdAsync(
-				Guid bookingId,
-				Guid hotelId);
+				Guid roomId,
+				Guid bookingId);
 
 		Task<BookingDto> CreateAsync(
-				Guid hotelId,
-				CreateBookingDto dto,
-				Guid userId);
+				Guid roomId,
+				Guid userId,
+				CreateBookingDto dto);
 
 		Task<bool> UpdateAsync(
-				Guid hotelId,
+				Guid roomId,
 				Guid bookingId,
-				UpdateBookingDto dto,
-				Guid userId);
+				Guid userId,
+				UpdateBookingDto dto);
 
 		Task<bool> DeleteAsync(
-				Guid hotelId,
+				Guid roomId,
 				Guid bookingId,
 				Guid userId);
 	}

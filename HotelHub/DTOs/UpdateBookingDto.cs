@@ -2,8 +2,6 @@
 {
 	public class UpdateBookingDto
 	{
-		public Guid Id { get; set; }
-
 		public DateOnly CheckIn { get; set; }
 
 		public DateOnly CheckOut { get; set; }

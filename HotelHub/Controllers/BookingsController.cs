@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using HotelHub.API.DTOs;
+using HotelHub.API.Entity;
 using HotelHub.API.Models;
 using HotelHub.API.Services.IServices;
 using Microsoft.AspNetCore.Authorization;
@@ -9,128 +10,163 @@ using Microsoft.AspNetCore.Mvc;
 namespace HotelHub.API.Controllers
 {
 	[ApiController]
-	[Route("api/hotels/{hotelId:guid}/bookings")]
 	[Authorize]
+	[Route("api/hotels/{hotelId:Guid}/rooms/{roomId:Guid}/bookings")]
 	public class BookingsController(
-	   IBookingService bookingService) : ControllerBase
+		IBookingService bookingService)
+		: ControllerBase
 	{
 		[HttpGet]
-		public async Task<ActionResult<ApiResponse<IEnumerable<BookingDto>>>> GetAll(
-			Guid hotelId)
+		[ProducesResponseType(
+			typeof(ApiResponse<IEnumerable<BookingDto>>),
+			StatusCodes.Status200OK)]
+		public async Task<ActionResult<ApiResponse<IEnumerable<BookingDto>>>>
+			GetAllBookings(
+				Guid hotelId,
+				Guid roomId)
 		{
-			var bookings = await bookingService.GetAllAsync(hotelId);
+			var bookings = await bookingService.GetAllAsync(roomId);
 
-			return Ok(
-				ApiResponse<IEnumerable<BookingDto>>.Ok(
-					bookings,
-					"Bookings retrieved successfully."));
+			var response = ApiResponse<IEnumerable<BookingDto>>.Ok(
+				bookings,
+				"Bookings retrieved successfully.");
+
+			return Ok(response);
 		}
 
-		[HttpGet("{bookingId:guid}")]
-		public async Task<ActionResult<ApiResponse<BookingDto>>> GetById(
-			Guid hotelId,
-			Guid bookingId)
+		[HttpGet("{bookingId:Guid}")]
+		[ProducesResponseType(
+			typeof(ApiResponse<BookingDto>),
+			StatusCodes.Status200OK)]
+		[ProducesResponseType(
+			typeof(ApiResponse<object>),
+			StatusCodes.Status404NotFound)]
+		public async Task<ActionResult<ApiResponse<BookingDto>>>
+			GetBookingById(
+				Guid hotelId,
+				Guid roomId,
+				Guid bookingId)
 		{
 			var booking = await bookingService.GetByIdAsync(
-				bookingId,
-				hotelId);
+				roomId,
+				bookingId);
 
-			if (booking is null)
-			{
-				return NotFound(
-					ApiResponse<BookingDto>.NotFound(
-						"Booking not found."));
-			}
+			var response = ApiResponse<BookingDto>.Ok(
+				booking,
+				"Booking retrieved successfully.");
 
-			return Ok(
-				ApiResponse<BookingDto>.Ok(
-					booking,
-					"Booking retrieved successfully."));
+			return Ok(response);
 		}
 
 		[HttpPost]
-		public async Task<ActionResult<ApiResponse<BookingDto>>> Create(
-			Guid hotelId,
-			CreateBookingDto dto)
+		[ProducesResponseType(
+			typeof(ApiResponse<BookingDto>),
+			StatusCodes.Status201Created)]
+		[ProducesResponseType(
+			typeof(ApiResponse<object>),
+			StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(
+			typeof(ApiResponse<object>),
+			StatusCodes.Status404NotFound)]
+		public async Task<ActionResult<ApiResponse<BookingDto>>>
+			CreateBooking(
+				Guid hotelId,
+				Guid roomId,
+				CreateBookingDto dto)
 		{
-			var userId = GetCurrentUserId();
-
-			var booking = await bookingService.CreateAsync(
-				hotelId,
-				dto,
-				userId);
-
-			return StatusCode(
-				StatusCodes.Status201Created,
-				ApiResponse<BookingDto>.CreatedAt(
-					booking,
-					"Booking created successfully."));
-		}
-
-		[HttpPut("{bookingId:guid}")]
-		public async Task<ActionResult<ApiResponse<object>>> Update(
-			Guid hotelId,
-			Guid bookingId,
-			UpdateBookingDto dto)
-		{
-			var userId = GetCurrentUserId();
-
-			var updated = await bookingService.UpdateAsync(
-				hotelId,
-				bookingId,
-				dto,
-				userId);
-
-			if (!updated)
-			{
-				return NotFound(
-					ApiResponse<object>.NotFound(
-						"Booking not found."));
-			}
-
-			return Ok(
-				ApiResponse<object>.Ok(
-					null,
-					"Booking updated successfully."));
-		}
-
-		[HttpDelete("{bookingId:guid}")]
-		public async Task<ActionResult<ApiResponse<object>>> Delete(
-			Guid hotelId,
-			Guid bookingId)
-		{
-			var userId = GetCurrentUserId();
-
-			var deleted = await bookingService.DeleteAsync(
-				hotelId,
-				bookingId,
-				userId);
-
-			if (!deleted)
-			{
-				return NotFound(
-					ApiResponse<object>.NotFound(
-						"Booking not found or already cancelled."));
-			}
-
-			return Ok(
-				ApiResponse<object>.Ok(
-					null,
-					"Booking cancelled successfully."));
-		}
-
-		private Guid GetCurrentUserId()
-		{
+			// Get the authenticated user's ID from JWT claims.
+			// The client must NOT send UserId in the request body.
 			var userIdClaim = User.FindFirstValue(
 				ClaimTypes.NameIdentifier);
 
 			if (!Guid.TryParse(userIdClaim, out var userId))
 			{
-				throw new UnauthorizedAccessException(
-					"Invalid user identity.");
+				return Unauthorized();
 			}
 
-			return userId;
+			var booking = await bookingService.CreateAsync(
+				roomId,
+				userId,
+				dto);
+
+			var response = ApiResponse<BookingDto>.CreatedAt(
+				booking,
+				"Booking created successfully.");
+
+			return CreatedAtAction(
+				nameof(GetBookingById),
+				new
+				{
+					hotelId,
+					roomId,
+					bookingId = booking.Id
+				},
+				response);
+		}
+
+		[HttpPut("{bookingId:Guid}")]
+		[ProducesResponseType(StatusCodes.Status204NoContent)]
+		[ProducesResponseType(
+			typeof(ApiResponse<object>),
+			StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(
+			typeof(ApiResponse<object>),
+			StatusCodes.Status404NotFound)]
+		[ProducesResponseType(
+			typeof(ApiResponse<object>),
+			StatusCodes.Status401Unauthorized)]
+		public async Task<IActionResult> UpdateBooking(
+			Guid hotelId,
+			Guid roomId,
+			Guid bookingId,
+			UpdateBookingDto dto)
+		{
+			// Get the authenticated user's ID from JWT claims.
+			var userIdClaim = User.FindFirstValue(
+				ClaimTypes.NameIdentifier);
+
+			if (!Guid.TryParse(userIdClaim, out var userId))
+			{
+				return Unauthorized();
+			}
+
+			await bookingService.UpdateAsync(
+				roomId,
+				bookingId,
+				userId,
+				dto);
+
+			return NoContent();
+		}
+
+		[HttpDelete("{bookingId:Guid}")]
+		[ProducesResponseType(StatusCodes.Status204NoContent)]
+		[ProducesResponseType(
+			typeof(ApiResponse<object>),
+			StatusCodes.Status404NotFound)]
+		[ProducesResponseType(
+			typeof(ApiResponse<object>),
+			StatusCodes.Status401Unauthorized)]
+		public async Task<IActionResult> CancelBooking(
+			Guid hotelId,
+			Guid roomId,
+			Guid bookingId)
+		{
+			// Get the authenticated user's ID from JWT claims.
+			var userIdClaim = User.FindFirstValue(
+				ClaimTypes.NameIdentifier);
+
+			if (!Guid.TryParse(userIdClaim, out var userId))
+			{
+				return Unauthorized();
+			}
+
+			await bookingService.DeleteAsync(
+				roomId,
+				bookingId,
+				userId);
+
+			return NoContent();
 		}
 	}
 }

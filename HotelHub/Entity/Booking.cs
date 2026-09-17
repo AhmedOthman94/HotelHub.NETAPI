@@ -7,9 +7,9 @@ namespace HotelHub.API.Entity
 	{
 		public Guid Id { get; set; }
 
-		// Fk to Hotel
-		public Guid HotelId { get; set; }
-		public Hotel Hotel { get; set; } = null!;
+		// Fk to Room
+		public Guid RoomId { get; set; }
+		public Room Room { get; set; } = null!;
 
 		// Fk to ApplicationUser
 		public Guid UserId { get; set; }

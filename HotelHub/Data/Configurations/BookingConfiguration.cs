@@ -13,9 +13,9 @@ namespace HotelHub.API.Data.Configurations
 			builder.Property(b => b.TotalPrice)
 					.HasPrecision(18, 2);
 
-			builder.HasOne(b => b.Hotel)
-					.WithMany(b => b.Bookings)
-					.HasForeignKey(b => b.HotelId)
+			builder.HasOne(b => b.Room)
+					.WithMany()
+					.HasForeignKey(b => b.RoomId)
 					.OnDelete(DeleteBehavior.Restrict);
 
 			builder.HasOne(b => b.User)
