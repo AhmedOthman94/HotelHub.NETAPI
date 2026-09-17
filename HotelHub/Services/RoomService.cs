@@ -2,6 +2,9 @@
 using HotelHub.API.Data;
 using HotelHub.API.DTOs;
 using HotelHub.API.Entity;
+using HotelHub.API.Enums;
+using HotelHub.API.Extensions;
+using HotelHub.API.Models;
 using HotelHub.API.Services.IServices;
 using Microsoft.EntityFrameworkCore;
 
@@ -59,10 +62,16 @@ namespace HotelHub.API.Services
 			return true;
 		}
 
-		public async Task<IEnumerable<RoomDto>> GetAllAsync(Guid hotelId)
+		public async Task<PagedResult<RoomDto>> GetAllAsync(
+					Guid hotelId,
+					string? searchTerm,
+					RoomFilterDto? filter,
+					SortingRequest? sorting,
+					int pageNumber,
+					int pageSize)
 		{
 			var hotelExists = await context.Hotels
-										.AnyAsync(h => h.Id == hotelId);
+				.AnyAsync(h => h.Id == hotelId);
 
 			if (!hotelExists)
 			{
@@ -70,13 +79,55 @@ namespace HotelHub.API.Services
 					"Hotel was not found.");
 			}
 
-			var rooms = await context.Rooms
-								.AsNoTracking()
-								.Where(r => r.HotelId == hotelId)
-								.OrderBy(r => r.RoomNumber)
-								.ToListAsync();
+			var query = context.Rooms
+				.AsNoTracking()
+				.Where(r => r.HotelId == hotelId)
+				.Search(
+					searchTerm,
+					r => r.RoomNumber);
 
-			return mapper.Map<IEnumerable<RoomDto>>(rooms);
+			if (filter is not null)
+			{
+				query = query
+					.WhereIf(
+						filter.RoomType.HasValue,
+						r => r.RoomType == filter.RoomType!.Value)
+
+					.WhereIf(
+						filter.MinCapacity.HasValue,
+						r => r.Capacity >= filter.MinCapacity!.Value)
+
+					.WhereIf(
+						filter.MaxCapacity.HasValue,
+						r => r.Capacity <= filter.MaxCapacity!.Value)
+
+					.WhereIf(
+						filter.MinPrice.HasValue,
+						r => r.PricePerNight >= filter.MinPrice!.Value)
+
+					.WhereIf(
+						filter.MaxPrice.HasValue,
+						r => r.PricePerNight <= filter.MaxPrice!.Value);
+			}
+
+			if (sorting is not null &&
+				!string.IsNullOrWhiteSpace(sorting.SortBy))
+			{
+				query = query.OrderByProperty(
+					sorting.SortBy,
+					sorting.SortDirection == SortDirection.Descending);
+			}
+			else
+			{
+				query = query.OrderBy(
+					r => r.RoomNumber);
+			}
+
+			var result = await query.ToPagedResultAsync(
+				pageNumber,
+				pageSize);
+
+			return result.MapTo<Room, RoomDto>(mapper);
 		}
 
 		public async Task<RoomDto?> GetByIdAsync(Guid hotelId, Guid roomId)

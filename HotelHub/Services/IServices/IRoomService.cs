@@ -1,11 +1,17 @@
 ﻿using HotelHub.API.DTOs;
+using HotelHub.API.Models;
 
 namespace HotelHub.API.Services.IServices
 {
 	public interface IRoomService
 	{
-		Task<IEnumerable<RoomDto>> GetAllAsync(
-			Guid hotelId);
+		Task<PagedResult<RoomDto>> GetAllAsync(
+			Guid hotelId,
+			string? searchTerm,
+			RoomFilterDto? filter,
+			SortingRequest? sorting,
+			int pageNumber,
+			int pageSize);
 
 		Task<RoomDto?> GetByIdAsync(
 			Guid hotelId,

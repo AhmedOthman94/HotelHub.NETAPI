@@ -14,17 +14,29 @@ namespace HotelHub.API.Controllers
 	: ControllerBase
 	{
 		[HttpGet]
-		[ProducesResponseType(typeof
-		(ApiResponse<IEnumerable<RoomDto>>), StatusCodes.Status200OK)]
-		public async Task<ActionResult<ApiResponse<IEnumerable<RoomDto>>>> GetAllRooms(
-				Guid hotelId)
+		[ProducesResponseType(
+			typeof(ApiResponse<PagedResult<RoomDto>>),
+			StatusCodes.Status200OK)]
+		public async Task<ActionResult<ApiResponse<PagedResult<RoomDto>>>>
+				GetAllRooms(
+					Guid hotelId,
+					[FromQuery] string? searchTerm = null,
+					[FromQuery] RoomFilterDto? filter = null,
+					[FromQuery] SortingRequest? sorting = null,
+					[FromQuery] int pageNumber = 1,
+					[FromQuery] int pageSize = 10)
 		{
-			var rooms = await roomService.GetAllAsync(hotelId);
+			var rooms = await roomService.GetAllAsync(
+				hotelId,
+				searchTerm,
+				filter,
+				sorting,
+				pageNumber,
+				pageSize);
 
-			var response = ApiResponse<IEnumerable<RoomDto>>.Ok(
-								rooms,
-								"Rooms retrieved successfully."
-			);
+			var response = ApiResponse<PagedResult<RoomDto>>.Ok(
+				rooms,
+				"Rooms retrieved successfully.");
 
 			return Ok(response);
 		}
