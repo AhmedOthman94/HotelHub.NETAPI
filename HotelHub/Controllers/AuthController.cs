@@ -359,5 +359,45 @@ namespace HotelHub.API.Controllers
 				message = "Password has been reset successfully."
 			});
 		}
+
+		[Authorize]
+		[HttpPost("change-password")]
+		public async Task<IActionResult> ChangePassword(
+				ChangePasswordDto request)
+		{
+			if (request.NewPassword != request.ConfirmPassword)
+			{
+				return BadRequest(new
+				{
+					message = "Passwords do not match."
+				});
+			}
+
+			var user = await userManager.GetUserAsync(User);
+
+			if (user is null)
+			{
+				return Unauthorized();
+			}
+
+			var result = await userManager.ChangePasswordAsync(
+				user,
+				request.CurrentPassword,
+				request.NewPassword);
+
+			if (!result.Succeeded)
+			{
+				return BadRequest(new
+				{
+					message = "Password change failed.",
+					errors = result.Errors.Select(e => e.Description)
+				});
+			}
+
+			return Ok(new
+			{
+				message = "Password changed successfully."
+			});
+		}
 	}
 }
