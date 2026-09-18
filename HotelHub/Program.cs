@@ -90,6 +90,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(opts =>
 	opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
+builder.Services.AddHealthChecks()
+	.AddDbContextCheck<ApplicationDbContext>();
+
 builder.Services.AddScoped<ICountryService, CountryService>();
 builder.Services.AddScoped<IHotelService, HotelService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
@@ -258,6 +261,9 @@ app.UseOutputCache();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHealthChecks("/health")
+	.AllowAnonymous();
 
 app.MapControllers();
 
