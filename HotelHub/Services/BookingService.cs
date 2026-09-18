@@ -3,6 +3,8 @@ using HotelHub.API.Data;
 using HotelHub.API.DTOs;
 using HotelHub.API.Entity;
 using HotelHub.API.Enums;
+using HotelHub.API.Extensions;
+using HotelHub.API.Models;
 using HotelHub.API.Services.IServices;
 using Microsoft.EntityFrameworkCore;
 
@@ -152,21 +154,79 @@ namespace HotelHub.API.Services
 
 			return true;
 		}
-		public async Task<IEnumerable<BookingDto>> GetAllAsync(
-			Guid roomId)
+		public async Task<PagedResult<BookingDto>> GetAllAsync(
+				Guid roomId,
+				string? searchTerm,
+				BookingFilterDto? filter,
+				SortingRequest? sorting,
+				int pageNumber,
+				int pageSize)
 		{
-			// Include Room and Hotel because BookingDto needs:
-			// - RoomNumber
-			// - HotelName
-			var bookings = await context.Bookings
+			var roomExists = await context.Rooms
+				.AnyAsync(r => r.Id == roomId);
+
+			if (!roomExists)
+			{
+				throw new KeyNotFoundException(
+					"Room was not found.");
+			}
+
+			var query = context.Bookings
 				.AsNoTracking()
 				.Include(b => b.Room)
 					.ThenInclude(r => r.Hotel)
-				.Where(b => b.RoomId == roomId)
-				.OrderByDescending(b => b.CheckIn)
-				.ToListAsync();
+				.Where(b => b.RoomId == roomId);
 
-			return mapper.Map<IEnumerable<BookingDto>>(bookings);
+			if (filter is not null)
+			{
+				query = query
+					.WhereIf(
+						filter.Status.HasValue,
+						b => b.Status == filter.Status!.Value)
+
+					.WhereIf(
+						filter.CheckInFrom.HasValue,
+						b => b.CheckIn >= filter.CheckInFrom!.Value)
+
+					.WhereIf(
+						filter.CheckInTo.HasValue,
+						b => b.CheckIn <= filter.CheckInTo!.Value)
+
+					.WhereIf(
+						filter.CheckOutFrom.HasValue,
+						b => b.CheckOut >= filter.CheckOutFrom!.Value)
+
+					.WhereIf(
+						filter.CheckOutTo.HasValue,
+						b => b.CheckOut <= filter.CheckOutTo!.Value)
+
+					.WhereIf(
+						filter.MinGuests.HasValue,
+						b => b.Guests >= filter.MinGuests!.Value)
+
+					.WhereIf(
+						filter.MaxGuests.HasValue,
+						b => b.Guests <= filter.MaxGuests!.Value);
+			}
+
+			if (sorting is not null &&
+				!string.IsNullOrWhiteSpace(sorting.SortBy))
+			{
+				query = query.OrderByProperty(
+					sorting.SortBy,
+					sorting.SortDirection == SortDirection.Descending);
+			}
+			else
+			{
+				query = query.OrderByDescending(
+					b => b.CheckIn);
+			}
+
+			var result = await query.ToPagedResultAsync(
+				pageNumber,
+				pageSize);
+
+			return result.MapTo<Booking, BookingDto>(mapper);
 		}
 		public async Task<BookingDto?> GetByIdAsync(
 			Guid roomId,

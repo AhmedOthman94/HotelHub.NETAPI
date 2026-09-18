@@ -1,4 +1,6 @@
-﻿using HotelHub.API.Models;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using HotelHub.API.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelHub.API.Extensions

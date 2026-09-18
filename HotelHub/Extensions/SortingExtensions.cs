@@ -16,8 +16,10 @@ namespace HotelHub.API.Extensions
 			}
 
 			var property = typeof(T).GetProperty(
-				propertyName,
-				(BindingFlags)StringComparison.OrdinalIgnoreCase);
+							propertyName,
+							BindingFlags.Public |
+							BindingFlags.Instance |
+							BindingFlags.IgnoreCase);
 
 			if (property is null)
 			{

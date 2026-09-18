@@ -1,10 +1,15 @@
 ﻿using HotelHub.API.DTOs;
+using HotelHub.API.Models;
 
 namespace HotelHub.API.Services.IServices
 {
 	public interface ICountryService
 	{
-		Task<IEnumerable<CountryDto>> GetAllCountriesAsync();
+		Task<PagedResult<CountryDto>> GetAllCountriesAsync(
+				string? searchTerm,
+				SortingRequest? sorting,
+				int pageNumber,
+				int pageSize);
 
 		Task<CountryDto?> GetCountryByIdAsync(Guid id);
 

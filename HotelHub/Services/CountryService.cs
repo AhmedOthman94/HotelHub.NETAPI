@@ -2,6 +2,8 @@
 using HotelHub.API.Data;
 using HotelHub.API.DTOs;
 using HotelHub.API.Entity;
+using HotelHub.API.Enums;
+using HotelHub.API.Extensions;
 using HotelHub.API.Models;
 using HotelHub.API.Services.IServices;
 using Microsoft.EntityFrameworkCore;
@@ -49,16 +51,36 @@ namespace HotelHub.API.Services
 			return true;
 		}
 
-		public async Task<IEnumerable<CountryDto>> GetAllCountriesAsync()
+		public async Task<PagedResult<CountryDto>> GetAllCountriesAsync(
+							string? searchTerm,
+							SortingRequest? sorting,
+							int pageNumber,
+							int pageSize)
 		{
-			var countries = await context.Countries
-										.AsNoTracking()
-										.OrderBy(c => c.Name)
-										.ToListAsync();
+			var query = context.Countries
+				.AsNoTracking()
+				.Search(
+					searchTerm,
+					c => c.Name,
+					c => c.CountryCode);
 
-			var countriesDto = mapper.Map<IEnumerable<CountryDto>>(countries);
+			if (sorting is not null &&
+				!string.IsNullOrWhiteSpace(sorting.SortBy))
+			{
+				query = query.OrderByProperty(
+					sorting.SortBy,
+					sorting.SortDirection == SortDirection.Descending);
+			}
+			else
+			{
+				query = query.OrderBy(c => c.Name);
+			}
 
-			return countriesDto;
+			var result = await query.ToPagedResultAsync(
+				pageNumber,
+				pageSize);
+
+			return result.MapTo<Country, CountryDto>(mapper);
 		}
 
 		public async Task<CountryDto?> GetCountryByIdAsync(Guid id)

@@ -17,15 +17,25 @@ namespace HotelHub.API.Controllers
 	: ControllerBase
 	{
 		[HttpGet]
-		[ProducesResponseType(typeof(ApiResponse<IEnumerable<CountryDto>>), StatusCodes.Status200OK)]
-		public async Task<ActionResult<ApiResponse<IEnumerable<CountryDto>>>> GetAllCountries()
+		[ProducesResponseType(
+				typeof(ApiResponse<PagedResult<CountryDto>>),
+				StatusCodes.Status200OK)]
+		public async Task<ActionResult<ApiResponse<PagedResult<CountryDto>>>>
+				GetAllCountries(
+					[FromQuery] string? searchTerm = null,
+					[FromQuery] SortingRequest? sorting = null,
+					[FromQuery] int pageNumber = 1,
+					[FromQuery] int pageSize = 10)
 		{
-			var countries = await service.GetAllCountriesAsync();
+			var countries = await service.GetAllCountriesAsync(
+				searchTerm,
+				sorting,
+				pageNumber,
+				pageSize);
 
-			var response = ApiResponse<IEnumerable<CountryDto>>.Ok(
-												countries,
-												"Countries retrieved successfully."
-			);
+			var response = ApiResponse<PagedResult<CountryDto>>.Ok(
+				countries,
+				"Countries retrieved successfully.");
 
 			return Ok(response);
 		}

@@ -1,10 +1,16 @@
 ﻿using HotelHub.API.DTOs;
+using HotelHub.API.Models;
 
 namespace HotelHub.API.Services.IServices
 {
 	public interface IHotelService
 	{
-		Task<IEnumerable<HotelDto>> GetAllHotelsAsync();
+		Task<PagedResult<HotelDto>> GetAllHotelsAsync(
+					string? searchTerm,
+					HotelFilterDto? filter,
+					SortingRequest? sorting,
+					int pageNumber,
+					int pageSize);
 
 		Task<HotelDto?> GetHotelByIdAsync(Guid id);
 
