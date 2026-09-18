@@ -6,6 +6,7 @@ using HotelHub.API.Services.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace HotelHub.API.Controllers
 {
@@ -13,10 +14,13 @@ namespace HotelHub.API.Controllers
 	[Authorize]
 	[Route("api/hotels/{hotelId:Guid}/rooms/{roomId:Guid}/bookings")]
 	public class BookingsController(
-		IBookingService bookingService)
+		IBookingService bookingService,
+		IOutputCacheStore outputCacheStore)
 		: ControllerBase
 	{
 		[HttpGet]
+		[OutputCache(Duration = 60,
+						Tags = ["bookings"])]
 		[ProducesResponseType(
 			typeof(ApiResponse<PagedResult<BookingDto>>),
 			StatusCodes.Status200OK)]
@@ -99,6 +103,8 @@ namespace HotelHub.API.Controllers
 				userId,
 				dto);
 
+			await outputCacheStore.EvictByTagAsync("bookings", default);
+
 			var response = ApiResponse<BookingDto>.CreatedAt(
 				booking,
 				"Booking created successfully.");
@@ -146,6 +152,8 @@ namespace HotelHub.API.Controllers
 				userId,
 				dto);
 
+			await outputCacheStore.EvictByTagAsync("bookings", default);
+
 			return NoContent();
 		}
 
@@ -175,6 +183,8 @@ namespace HotelHub.API.Controllers
 				roomId,
 				bookingId,
 				userId);
+
+			await outputCacheStore.EvictByTagAsync("bookings", default);
 
 			return NoContent();
 		}

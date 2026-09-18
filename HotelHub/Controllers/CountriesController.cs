@@ -4,6 +4,7 @@ using HotelHub.API.Models;
 using HotelHub.API.Services.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace HotelHub.API.Controllers
 {
@@ -11,12 +12,15 @@ namespace HotelHub.API.Controllers
 	[ApiController]
 	public class CountriesController(
 							ICountryService service,
+							IOutputCacheStore outputCacheStore,
 							IValidator<CreateCountryDto> createValidator,
 							IValidator<UpdateCountryDto> updateValidator
 	)
 	: ControllerBase
 	{
 		[HttpGet]
+		[OutputCache(Duration = 60, 
+						Tags = ["countries"])]
 		[ProducesResponseType(
 				typeof(ApiResponse<PagedResult<CountryDto>>),
 				StatusCodes.Status200OK)]
@@ -86,6 +90,9 @@ namespace HotelHub.API.Controllers
 
 			var country = await service.CreateCountryAsync(dto);
 
+			await outputCacheStore.EvictByTagAsync("countries",
+								default);
+
 			var successResponse = ApiResponse<CountryDto>.CreatedAt(
 									country,
 									"Country created successfully."
@@ -140,6 +147,9 @@ namespace HotelHub.API.Controllers
 				return NotFound(response);
 			}
 
+			await outputCacheStore.EvictByTagAsync("countries",
+							default);
+
 			return NoContent();
 		}
 
@@ -159,6 +169,9 @@ namespace HotelHub.API.Controllers
 
 				return NotFound(response);
 			}
+
+			await outputCacheStore.EvictByTagAsync("countries",
+							default);
 
 			return NoContent();
 		}

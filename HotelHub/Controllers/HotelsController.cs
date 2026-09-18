@@ -3,18 +3,22 @@ using HotelHub.API.DTOs;
 using HotelHub.API.Models;
 using HotelHub.API.Services.IServices;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace HotelHub.API.Controllers
 {
 	[Route("api/hotels")]
 	[ApiController]
 	public class HotelsController(IHotelService service,
+								IOutputCacheStore outputCacheStore,
 								IValidator<CreateHotelDto> createValidator,
 								IValidator<UpdateHotelDto> updateValidator
 	)
 	: ControllerBase
 	{
 		[HttpGet]
+		[OutputCache(Duration = 60,
+						Tags = ["hotels"])]
 		[ProducesResponseType(
 			typeof(ApiResponse<PagedResult<HotelDto>>),
 			StatusCodes.Status200OK)]
@@ -86,6 +90,8 @@ namespace HotelHub.API.Controllers
 
 			var hotel = await service.CreateHotelAsync(dto);
 
+			await outputCacheStore.EvictByTagAsync("hotels", default);
+
 			var successResponse = ApiResponse<HotelDto>.CreatedAt(
 									hotel,
 									"Hotel created successfully."
@@ -140,6 +146,8 @@ namespace HotelHub.API.Controllers
 				return NotFound(response);
 			}
 
+			await outputCacheStore.EvictByTagAsync("hotels", default);
+
 			return NoContent();
 		}
 
@@ -159,6 +167,8 @@ namespace HotelHub.API.Controllers
 
 				return NotFound(response);
 			}
+
+			await outputCacheStore.EvictByTagAsync("hotels", default);
 
 			return NoContent();
 		}

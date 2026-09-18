@@ -20,6 +20,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+builder.Services.AddOutputCache();
+
 builder.Services.AddValidatorsFromAssemblyContaining<CreateCountryDtoValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<UpdateCountryDtoValidator>();
 
@@ -143,6 +145,8 @@ builder.Services.AddAuthorizationBuilder()
 
 
 var app = builder.Build();
+
+app.UseOutputCache();
 
 using (var scope = app.Services.CreateScope())
 {
