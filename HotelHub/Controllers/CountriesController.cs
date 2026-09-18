@@ -5,11 +5,13 @@ using HotelHub.API.Services.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HotelHub.API.Controllers
 {
 	[Route("api/countries")]
 	[ApiController]
+	[EnableRateLimiting("api")]
 	public class CountriesController(
 							ICountryService service,
 							IOutputCacheStore outputCacheStore,

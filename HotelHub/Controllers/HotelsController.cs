@@ -4,11 +4,13 @@ using HotelHub.API.Models;
 using HotelHub.API.Services.IServices;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HotelHub.API.Controllers
 {
 	[Route("api/hotels")]
 	[ApiController]
+	[EnableRateLimiting("api")]
 	public class HotelsController(IHotelService service,
 								IOutputCacheStore outputCacheStore,
 								IValidator<CreateHotelDto> createValidator,

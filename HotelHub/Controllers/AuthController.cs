@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,6 +15,7 @@ namespace HotelHub.API.Controllers
 {
 	[Route("api/auth")]
 	[ApiController]
+	[EnableRateLimiting("auth")]
 	public class AuthController (
 								UserManager<ApplicationUser> userManager,
 								ITokenService tokenService)

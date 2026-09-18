@@ -7,12 +7,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HotelHub.API.Controllers
 {
 	[ApiController]
 	[Authorize]
 	[Route("api/hotels/{hotelId:Guid}/rooms/{roomId:Guid}/bookings")]
+	[EnableRateLimiting("api")]
 	public class BookingsController(
 		IBookingService bookingService,
 		IOutputCacheStore outputCacheStore)

@@ -9,6 +9,7 @@ using HotelHub.API.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -105,6 +106,44 @@ var jwtKey = builder.Configuration["Jwt:Key"]
 		?? throw new InvalidOperationException("JWT Key is not configured.");
 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
 
+builder.Services.AddRateLimiter(options =>
+{
+	options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+	options.OnRejected = async (context, cancellationToken) =>
+	{
+		context.HttpContext.Response.ContentType =
+			"application/json";
+
+		await context.HttpContext.Response.WriteAsJsonAsync(
+			new
+			{
+				Success = false,
+				StatusCode = 429,
+				Message = "Too many requests. Please try again later.",
+				Data = (object?)null,
+				Errors = (object?)null,
+				TimeStamp = DateTime.UtcNow
+			},
+			cancellationToken);
+	};
+
+	// General API policy
+	options.AddFixedWindowLimiter("api", limiterOptions =>
+	{
+		limiterOptions.PermitLimit = 100;
+		limiterOptions.Window = TimeSpan.FromMinutes(1);
+		limiterOptions.QueueLimit = 0;
+	});
+
+	// Authentication policy
+	options.AddFixedWindowLimiter("auth", limiterOptions =>
+	{
+		limiterOptions.PermitLimit = 10;
+		limiterOptions.Window = TimeSpan.FromMinutes(1);
+		limiterOptions.QueueLimit = 0;
+	});
+});
 
 builder.Services.AddAuthentication(opts => 
 {
@@ -146,7 +185,6 @@ builder.Services.AddAuthorizationBuilder()
 
 var app = builder.Build();
 
-app.UseOutputCache();
 
 using (var scope = app.Services.CreateScope())
 {
@@ -184,6 +222,9 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseOutputCache();
+app.UseRateLimiter();
 
 app.MapControllers();
 
