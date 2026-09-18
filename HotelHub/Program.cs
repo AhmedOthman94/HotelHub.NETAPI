@@ -1,6 +1,7 @@
 using System.Text;
 using FluentValidation;
 using HotelHub.API.Data;
+using HotelHub.API.Exceptions;
 using HotelHub.API.Models;
 using HotelHub.API.Models.Auth;
 using HotelHub.API.Services;
@@ -8,6 +9,7 @@ using HotelHub.API.Services.IServices;
 using HotelHub.API.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +18,22 @@ using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
+builder.Services.AddHttpLogging(options =>
+{
+	options.LoggingFields =
+		HttpLoggingFields.RequestMethod
+		| HttpLoggingFields.RequestPath
+		| HttpLoggingFields.ResponseStatusCode
+		| HttpLoggingFields.Duration;
+});
 
 // Add services to the container.
 
@@ -27,11 +45,11 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateCountryDtoValidator>(
 builder.Services.AddValidatorsFromAssemblyContaining<UpdateCountryDtoValidator>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi("v1", opts => 
+builder.Services.AddOpenApi("v1", opts =>
 {
-	opts.AddDocumentTransformer((document, context, CancellationToken) => 
+	opts.AddDocumentTransformer((document, context, CancellationToken) =>
 	{
-		document.Info = new() 
+		document.Info = new()
 		{
 			Title = "HotelHub API",
 			Version = context.DocumentName,
@@ -40,7 +58,7 @@ builder.Services.AddOpenApi("v1", opts =>
 
 		document.Components ??= new OpenApiComponents();
 		document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
-		document.Components.SecuritySchemes.Add("Bearer", new OpenApiSecurityScheme 
+		document.Components.SecuritySchemes.Add("Bearer", new OpenApiSecurityScheme
 		{
 			Type = SecuritySchemeType.Http,
 			Scheme = "bearer",
@@ -62,12 +80,12 @@ builder.Services.AddOpenApi("v1", opts =>
 	});
 });
 
-builder.Services.AddAutoMapper(cfg => 
+builder.Services.AddAutoMapper(cfg =>
 {
 	cfg.AddMaps(typeof(Program).Assembly);
 });
 
-builder.Services.AddDbContext<ApplicationDbContext>(opts => 
+builder.Services.AddDbContext<ApplicationDbContext>(opts =>
 {
 	opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
@@ -90,7 +108,7 @@ builder.Services.AddIdentityCore<ApplicationUser>()
 				.AddDefaultTokenProviders();
 
 // Identity options
-builder.Services.Configure<IdentityOptions>(opts => 
+builder.Services.Configure<IdentityOptions>(opts =>
 {
 	opts.User.RequireUniqueEmail = true;
 
@@ -104,7 +122,9 @@ builder.Services.Configure<IdentityOptions>(opts =>
 // JWT
 var jwtKey = builder.Configuration["Jwt:Key"]
 		?? throw new InvalidOperationException("JWT Key is not configured.");
-var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+
+var key = new SymmetricSecurityKey(
+	Encoding.UTF8.GetBytes(jwtKey));
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -145,21 +165,30 @@ builder.Services.AddRateLimiter(options =>
 	});
 });
 
-builder.Services.AddAuthentication(opts => 
+builder.Services.AddAuthentication(opts =>
 {
-	opts.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-	opts.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-	opts.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(opts => 
+	opts.DefaultAuthenticateScheme =
+		JwtBearerDefaults.AuthenticationScheme;
+
+	opts.DefaultChallengeScheme =
+		JwtBearerDefaults.AuthenticationScheme;
+
+	opts.DefaultScheme =
+		JwtBearerDefaults.AuthenticationScheme;
+
+}).AddJwtBearer(opts =>
 {
-	opts.TokenValidationParameters = new TokenValidationParameters 
+	opts.TokenValidationParameters = new TokenValidationParameters
 	{
 		ValidateIssuer = true,
 		ValidIssuer = builder.Configuration["Jwt:Issuer"],
+
 		ValidateAudience = true,
 		ValidAudience = builder.Configuration["Jwt:Audience"],
+
 		ValidateIssuerSigningKey = true,
 		IssuerSigningKey = key,
+
 		ValidateLifetime = true,
 		ClockSkew = TimeSpan.Zero
 	};
@@ -185,20 +214,21 @@ builder.Services.AddAuthorizationBuilder()
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
 
 using (var scope = app.Services.CreateScope())
 {
 	var roleManager = scope.ServiceProvider
-				.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+		.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
 
 	var userManager = scope.ServiceProvider
-					.GetRequiredService<UserManager<ApplicationUser>>();
+		.GetRequiredService<UserManager<ApplicationUser>>();
 
 	await IdentitySeeder.SeedRoleAsync(roleManager);
 
 	await IdentitySeeder.SeedAdminAsync(
-		userManager, builder.Configuration
-	);
+		userManager,
+		builder.Configuration);
 }
 
 // Configure the HTTP request pipeline.
@@ -220,11 +250,14 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseHttpLogging();
+
+app.UseRateLimiter();
+app.UseOutputCache();
+
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.UseOutputCache();
-app.UseRateLimiter();
 
 app.MapControllers();
 
