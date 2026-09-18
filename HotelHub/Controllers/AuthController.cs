@@ -1,4 +1,5 @@
-﻿using HotelHub.API.Models;
+﻿using System.Text;
+using HotelHub.API.Models;
 using HotelHub.API.Models.Auth;
 using HotelHub.API.Models.Auth.DTOs;
 using HotelHub.API.Services.IServices;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelHub.API.Controllers
@@ -254,21 +256,107 @@ namespace HotelHub.API.Controllers
 		}
 
 		[AllowAnonymous]
-		[HttpPost("test-email")]
-		public async Task<IActionResult> TestEmail(
-			[FromServices] IEmailService emailService)
+		[HttpPost("forgot-password")]
+		public async Task<IActionResult> ForgotPassword(
+				ForgotPasswordDto request,
+				[FromServices] IEmailService emailService)
 		{
+			var user = await userManager.FindByEmailAsync(request.Email);
+
+			if (user is null)
+			{
+				return Ok(new
+				{
+					message = "If the email exists, a password reset link has been sent."
+				});
+			}
+
+			var token = await userManager.GeneratePasswordResetTokenAsync(user);
+
+			var encodedToken = WebEncoders.Base64UrlEncode(
+				Encoding.UTF8.GetBytes(token));
+
+			var resetLink =
+				$"https://localhost:xxxx/reset-password?email={Uri.EscapeDataString(user.Email!)}&token={encodedToken}";
+
 			await emailService.SendAsync(
-				"YOUR_TEST_EMAIL@gmail.com",
-				"HotelHub Test Email",
-				"""
-					<h2>HotelHub Email Test</h2>
-					<p>Email Service is working successfully!</p>
-					""");
+				user.Email!,
+				"HotelHub - Reset Password",
+				$"""
+				<h2>Reset Your Password</h2>
+
+				<p>You requested to reset your HotelHub password.</p>
+
+				<p>
+					<a href="{resetLink}">
+						Reset Password
+					</a>
+				</p>
+
+				<p>If you did not request this, you can safely ignore this email.</p>
+				""");
 
 			return Ok(new
 			{
-				message = "Test email sent successfully."
+				message = "If the email exists, a password reset link has been sent."
+			});
+		}
+
+		[AllowAnonymous]
+		[HttpPost("reset-password")]
+		public async Task<IActionResult> ResetPassword(
+				ResetPasswordDto request)
+		{
+			if (request.NewPassword != request.ConfirmPassword)
+			{
+				return BadRequest(new
+				{
+					message = "Passwords do not match."
+				});
+			}
+
+			var user = await userManager.FindByEmailAsync(request.Email);
+
+			if (user is null)
+			{
+				return BadRequest(new
+				{
+					message = "Invalid password reset request."
+				});
+			}
+
+			string decodedToken;
+
+			try
+			{
+				decodedToken = Encoding.UTF8.GetString(
+					WebEncoders.Base64UrlDecode(request.Token));
+			}
+			catch (FormatException)
+			{
+				return BadRequest(new
+				{
+					message = "Invalid password reset token."
+				});
+			}
+
+			var result = await userManager.ResetPasswordAsync(
+				user,
+				decodedToken,
+				request.NewPassword);
+
+			if (!result.Succeeded)
+			{
+				return BadRequest(new
+				{
+					message = "Password reset failed.",
+					errors = result.Errors.Select(e => e.Description)
+				});
+			}
+
+			return Ok(new
+			{
+				message = "Password has been reset successfully."
 			});
 		}
 	}
