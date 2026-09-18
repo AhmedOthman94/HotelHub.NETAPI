@@ -252,5 +252,24 @@ namespace HotelHub.API.Controllers
 			return HttpContext.Connection.RemoteIpAddress?.ToString()
 				?? "Unknown";
 		}
+
+		[AllowAnonymous]
+		[HttpPost("test-email")]
+		public async Task<IActionResult> TestEmail(
+			[FromServices] IEmailService emailService)
+		{
+			await emailService.SendAsync(
+				"YOUR_TEST_EMAIL@gmail.com",
+				"HotelHub Test Email",
+				"""
+					<h2>HotelHub Email Test</h2>
+					<p>Email Service is working successfully!</p>
+					""");
+
+			return Ok(new
+			{
+				message = "Test email sent successfully."
+			});
+		}
 	}
 }

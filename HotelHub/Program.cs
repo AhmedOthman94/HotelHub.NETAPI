@@ -1,17 +1,18 @@
+using System.Text;
 using FluentValidation;
 using HotelHub.API.Data;
+using HotelHub.API.Models;
+using HotelHub.API.Models.Auth;
 using HotelHub.API.Services;
 using HotelHub.API.Services.IServices;
 using HotelHub.API.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using HotelHub.API.Models.Auth;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,8 +72,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(opts =>
 builder.Services.AddScoped<ICountryService, CountryService>();
 builder.Services.AddScoped<IHotelService, HotelService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
-//builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
+
+builder.Services.Configure<EmailOptions>(
+	builder.Configuration.GetSection("Email"));
+
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Identity
 builder.Services.AddIdentityCore<ApplicationUser>()
