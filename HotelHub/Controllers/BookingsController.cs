@@ -51,12 +51,8 @@ namespace HotelHub.API.Controllers
 		}
 
 		[HttpGet("{bookingId:Guid}")]
-		[ProducesResponseType(
-			typeof(ApiResponse<BookingDto>),
-			StatusCodes.Status200OK)]
-		[ProducesResponseType(
-			typeof(ApiResponse<object>),
-			StatusCodes.Status404NotFound)]
+		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
 		public async Task<ActionResult<ApiResponse<BookingDto>>>
 			GetBookingById(
 				Guid hotelId,
@@ -75,15 +71,9 @@ namespace HotelHub.API.Controllers
 		}
 
 		[HttpPost]
-		[ProducesResponseType(
-			typeof(ApiResponse<BookingDto>),
-			StatusCodes.Status201Created)]
-		[ProducesResponseType(
-			typeof(ApiResponse<object>),
-			StatusCodes.Status400BadRequest)]
-		[ProducesResponseType(
-			typeof(ApiResponse<object>),
-			StatusCodes.Status404NotFound)]
+		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status201Created)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
 		public async Task<ActionResult<ApiResponse<BookingDto>>>
 			CreateBooking(
 				Guid hotelId,
@@ -122,17 +112,43 @@ namespace HotelHub.API.Controllers
 				response);
 		}
 
+		[HttpPost("{bookingId:Guid}/approve")]
+		[ProducesResponseType(StatusCodes.Status204NoContent)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
+		public async Task<IActionResult> ApproveBooking(
+			Guid hotelId,
+			Guid roomId,
+			Guid bookingId)
+		{
+			// Get the authenticated user's ID from JWT claims.
+			var userIdClaim = User.FindFirstValue(
+				ClaimTypes.NameIdentifier);
+
+			if (!Guid.TryParse(userIdClaim, out var adminUserId))
+			{
+				return Unauthorized();
+			}
+
+			await bookingService.ApproveAsync(
+				hotelId,
+				roomId,
+				bookingId,
+				adminUserId);
+
+			await outputCacheStore.EvictByTagAsync(
+				"bookings",
+				default);
+
+			return NoContent();
+		}
+
 		[HttpPut("{bookingId:Guid}")]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
-		[ProducesResponseType(
-			typeof(ApiResponse<object>),
-			StatusCodes.Status400BadRequest)]
-		[ProducesResponseType(
-			typeof(ApiResponse<object>),
-			StatusCodes.Status404NotFound)]
-		[ProducesResponseType(
-			typeof(ApiResponse<object>),
-			StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
 		public async Task<IActionResult> UpdateBooking(
 			Guid hotelId,
 			Guid roomId,
@@ -161,12 +177,8 @@ namespace HotelHub.API.Controllers
 
 		[HttpDelete("{bookingId:Guid}")]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
-		[ProducesResponseType(
-			typeof(ApiResponse<object>),
-			StatusCodes.Status404NotFound)]
-		[ProducesResponseType(
-			typeof(ApiResponse<object>),
-			StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
 		public async Task<IActionResult> CancelBooking(
 			Guid hotelId,
 			Guid roomId,

@@ -341,5 +341,55 @@ namespace HotelHub.API.Services
 
 			return true;
 		}
+
+		public async Task<bool> ApproveAsync(
+	Guid hotelId,
+	Guid roomId,
+	Guid bookingId,
+	Guid adminUserId)
+		{
+			var isHotelAdmin = await context.HotelAdmins
+				.AnyAsync(ha =>
+					ha.HotelId == hotelId &&
+					ha.UserId == adminUserId);
+
+			if (!isHotelAdmin)
+			{
+				throw new UnauthorizedAccessException(
+					"You are not authorized to approve bookings for this hotel.");
+			}
+
+			var booking = await context.Bookings
+				.Include(b => b.Room)
+				.FirstOrDefaultAsync(b =>
+					b.Id == bookingId &&
+					b.RoomId == roomId &&
+					b.Room.HotelId == hotelId);
+
+			if (booking is null)
+			{
+				throw new KeyNotFoundException(
+					"Booking was not found.");
+			}
+
+			if (booking.Status == BookingStatus.Cancelled)
+			{
+				throw new InvalidOperationException(
+					"Cancelled bookings cannot be approved.");
+			}
+
+			if (booking.Status == BookingStatus.Confirmed)
+			{
+				throw new InvalidOperationException(
+					"Booking is already confirmed.");
+			}
+
+			booking.Status = BookingStatus.Confirmed;
+			booking.UpdatedAtUtc = DateTime.UtcNow;
+
+			await context.SaveChangesAsync();
+
+			return true;
+		}
 	}
 }

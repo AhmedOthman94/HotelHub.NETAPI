@@ -32,5 +32,11 @@ namespace HotelHub.API.Services.IServices
 				Guid roomId,
 				Guid bookingId,
 				Guid userId);
+
+		Task<bool> ApproveAsync(
+				Guid hotelId,
+				Guid roomId,
+				Guid bookingId,
+				Guid adminUserId);
 	}
 }
