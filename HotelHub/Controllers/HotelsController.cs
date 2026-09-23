@@ -2,12 +2,16 @@
 using HotelHub.API.DTOs;
 using HotelHub.API.Models;
 using HotelHub.API.Services.IServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace HotelHub.API.Controllers
 {
+	/// <summary>
+	/// Provides endpoints for managing hotels.
+	/// </summary>
 	[Route("api/hotels")]
 	[ApiController]
 	[EnableRateLimiting("api")]
@@ -18,6 +22,10 @@ namespace HotelHub.API.Controllers
 	)
 	: ControllerBase
 	{
+		/// <summary>
+		/// Retrieves a paginated list of hotels.
+		/// </summary>
+		[Authorize(Policy = "AuthenticatedUser")]
 		[HttpGet]
 		[OutputCache(Duration = 60,
 						Tags = ["hotels"])]
@@ -46,6 +54,10 @@ namespace HotelHub.API.Controllers
 			return Ok(response);
 		}
 
+		/// <summary>
+		/// Retrieves a hotel by its identifier.
+		/// </summary>
+		[Authorize(Policy = "AuthenticatedUser")]
 		[HttpGet("{id:Guid}", Name = "GetHotelById")]
 		[ProducesResponseType(typeof(ApiResponse<HotelDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -70,7 +82,10 @@ namespace HotelHub.API.Controllers
 			return Ok(successResponse);
 		}
 
-
+		/// <summary>
+		/// Creates a new hotel.
+		/// </summary>
+		[Authorize(Policy = "AdminOnly")]
 		[HttpPost]
 		[ProducesResponseType(typeof(ApiResponse<HotelDto>), StatusCodes.Status201Created)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -106,7 +121,10 @@ namespace HotelHub.API.Controllers
 			);
 		}
 
-
+		/// <summary>
+		/// Updates an existing hotel.
+		/// </summary>
+		[Authorize(Policy = "AdminOnly")]
 		[HttpPut("{id:Guid}")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -153,7 +171,10 @@ namespace HotelHub.API.Controllers
 			return NoContent();
 		}
 
-
+		/// <summary>
+		/// Deletes a hotel by its identifier.
+		/// </summary>
+		[Authorize(Policy = "AdminOnly")]
 		[HttpDelete("{id:Guid}")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]

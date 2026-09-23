@@ -13,14 +13,20 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HotelHub.API.Controllers
 {
+	/// <summary>
+	/// Provides authentication and account security endpoints.
+	/// </summary>
 	[Route("api/auth")]
 	[ApiController]
 	[EnableRateLimiting("auth")]
-	public class AuthController (
+	public class AuthController(
 								UserManager<ApplicationUser> userManager,
 								ITokenService tokenService)
 	: ControllerBase
 	{
+		/// <summary>
+		/// Registers a new user account with the User role.
+		/// </summary>
 		[AllowAnonymous]
 		[HttpPost("register")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
@@ -64,6 +70,9 @@ namespace HotelHub.API.Controllers
 			);
 		}
 
+		/// <summary>
+		/// Authenticates a user and returns access and refresh tokens.
+		/// </summary>
 		[AllowAnonymous]
 		[HttpPost("login")]
 		[ProducesResponseType(typeof(ApiResponse<TokenResponseDto>), StatusCodes.Status200OK)]
@@ -121,10 +130,13 @@ namespace HotelHub.API.Controllers
 			return Ok(successResponse);
 		}
 
+		/// <summary>
+		/// Refreshes an access token using a valid refresh token.
+		/// </summary>
 		[AllowAnonymous]
 		[HttpPost("refresh-token")]
-		[ProducesResponseType(typeof(ApiResponse<TokenResponseDto>),StatusCodes.Status200OK)]
-		[ProducesResponseType(typeof(ApiResponse<object>),StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(typeof(ApiResponse<TokenResponseDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
 		public async Task<ActionResult<ApiResponse<TokenResponseDto>>> RefreshToken(
 								[FromBody] RefreshTokenRequestDto dto)
 		{
@@ -192,6 +204,9 @@ namespace HotelHub.API.Controllers
 			return Ok(responseSuccess);
 		}
 
+		/// <summary>
+		/// Revokes an active refresh token.
+		/// </summary>
 		[AllowAnonymous]
 		[HttpPost("revoke")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -257,6 +272,9 @@ namespace HotelHub.API.Controllers
 				?? "Unknown";
 		}
 
+		/// <summary>
+		/// Sends a password reset link to the specified email address.
+		/// </summary>
 		[AllowAnonymous]
 		[HttpPost("forgot-password")]
 		public async Task<IActionResult> ForgotPassword(
@@ -304,6 +322,9 @@ namespace HotelHub.API.Controllers
 			});
 		}
 
+		/// <summary>
+		/// Resets a user's password using a valid password reset token.
+		/// </summary>
 		[AllowAnonymous]
 		[HttpPost("reset-password")]
 		public async Task<IActionResult> ResetPassword(
@@ -362,7 +383,10 @@ namespace HotelHub.API.Controllers
 			});
 		}
 
-		[Authorize]
+		/// <summary>
+		/// Changes the password of the currently authenticated user.
+		/// </summary>
+		[Authorize(Policy = "AuthenticatedUser")]
 		[HttpPost("change-password")]
 		public async Task<IActionResult> ChangePassword(
 				ChangePasswordDto request)

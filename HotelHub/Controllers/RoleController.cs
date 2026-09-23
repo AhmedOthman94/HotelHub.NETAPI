@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HotelHub.API.Controllers
 {
+	/// <summary>
+	/// Provides endpoints for managing roles and user role assignments.
+	/// </summary>
 	[Authorize(Policy = "AdminOnly")]
 	[Route("api/role")]
 	[ApiController]
@@ -15,6 +18,9 @@ namespace HotelHub.API.Controllers
 		RoleManager<IdentityRole<Guid>> roleManager)
 		: ControllerBase
 	{
+		/// <summary>
+		/// Creates a new application role.
+		/// </summary>
 		[HttpPost("create")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -52,6 +58,9 @@ namespace HotelHub.API.Controllers
 			return Ok(successResponse);
 		}
 
+		/// <summary>
+		/// Assigns an existing role to a user.
+		/// </summary>
 		[HttpPost("assign")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]

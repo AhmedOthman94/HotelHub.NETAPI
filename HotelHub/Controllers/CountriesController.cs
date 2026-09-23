@@ -9,6 +9,9 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace HotelHub.API.Controllers
 {
+	/// <summary>
+	/// Provides endpoints for managing countries.
+	/// </summary>
 	[Route("api/countries")]
 	[ApiController]
 	[EnableRateLimiting("api")]
@@ -20,8 +23,12 @@ namespace HotelHub.API.Controllers
 	)
 	: ControllerBase
 	{
+		/// <summary>
+		/// Retrieves a paginated list of countries.
+		/// </summary>
+		[Authorize(Policy = "AuthenticatedUser")]
 		[HttpGet]
-		[OutputCache(Duration = 60, 
+		[OutputCache(Duration = 60,
 						Tags = ["countries"])]
 		[ProducesResponseType(
 				typeof(ApiResponse<PagedResult<CountryDto>>),
@@ -46,6 +53,10 @@ namespace HotelHub.API.Controllers
 			return Ok(response);
 		}
 
+		/// <summary>
+		/// Retrieves a country by its identifier.
+		/// </summary>
+		[Authorize(Policy = "AuthenticatedUser")]
 		[HttpGet("{id:Guid}", Name = "GetCountryById")]
 		[ProducesResponseType(typeof(ApiResponse<CountryDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -70,6 +81,9 @@ namespace HotelHub.API.Controllers
 			return Ok(successResponse);
 		}
 
+		/// <summary>
+		/// Creates a new country.
+		/// </summary>
 		[Authorize(Policy = "AdminOnly")]
 		[HttpPost]
 		[ProducesResponseType(typeof(ApiResponse<CountryDto>), StatusCodes.Status201Created)]
@@ -107,6 +121,9 @@ namespace HotelHub.API.Controllers
 			);
 		}
 
+		/// <summary>
+		/// Updates an existing country.
+		/// </summary>
 		[Authorize(Policy = "AdminOnly")]
 		[HttpPut("{id:Guid}")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -155,6 +172,9 @@ namespace HotelHub.API.Controllers
 			return NoContent();
 		}
 
+		/// <summary>
+		/// Deletes a country by its identifier.
+		/// </summary>
 		[Authorize(Policy = "AdminOnly")]
 		[HttpDelete("{id:Guid}")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]

@@ -11,6 +11,9 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace HotelHub.API.Controllers
 {
+	/// <summary>
+	/// Provides endpoints for managing room bookings.
+	/// </summary>
 	[ApiController]
 	[Authorize]
 	[Route("api/hotels/{hotelId:Guid}/rooms/{roomId:Guid}/bookings")]
@@ -20,6 +23,10 @@ namespace HotelHub.API.Controllers
 		IOutputCacheStore outputCacheStore)
 		: ControllerBase
 	{
+		/// <summary>
+		/// Retrieves paginated bookings for a specific room.
+		/// </summary>
+		[Authorize(Policy = "AuthenticatedUser")]
 		[HttpGet]
 		[OutputCache(Duration = 60,
 						Tags = ["bookings"])]
@@ -50,6 +57,10 @@ namespace HotelHub.API.Controllers
 			return Ok(response);
 		}
 
+		/// <summary>
+		/// Retrieves a specific booking by its identifier.
+		/// </summary>
+		[Authorize(Policy = "AuthenticatedUser")]
 		[HttpGet("{bookingId:Guid}")]
 		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -70,6 +81,10 @@ namespace HotelHub.API.Controllers
 			return Ok(response);
 		}
 
+		/// <summary>
+		/// Creates a new booking for the authenticated user.
+		/// </summary>
+		[Authorize(Policy = "UserOnly")]
 		[HttpPost]
 		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status201Created)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -80,8 +95,6 @@ namespace HotelHub.API.Controllers
 				Guid roomId,
 				CreateBookingDto dto)
 		{
-			// Get the authenticated user's ID from JWT claims.
-			// The client must NOT send UserId in the request body.
 			var userIdClaim = User.FindFirstValue(
 				ClaimTypes.NameIdentifier);
 
@@ -112,6 +125,10 @@ namespace HotelHub.API.Controllers
 				response);
 		}
 
+		/// <summary>
+		/// Approves a pending booking for a hotel managed by the authenticated admin.
+		/// </summary>
+		[Authorize(Policy = "AdminOnly")]
 		[HttpPost("{bookingId:Guid}/approve")]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
@@ -122,7 +139,6 @@ namespace HotelHub.API.Controllers
 			Guid roomId,
 			Guid bookingId)
 		{
-			// Get the authenticated user's ID from JWT claims.
 			var userIdClaim = User.FindFirstValue(
 				ClaimTypes.NameIdentifier);
 
@@ -144,6 +160,10 @@ namespace HotelHub.API.Controllers
 			return NoContent();
 		}
 
+		/// <summary>
+		/// Updates a booking owned by the authenticated user.
+		/// </summary>
+		[Authorize(Policy = "UserOnly")]
 		[HttpPut("{bookingId:Guid}")]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -155,7 +175,6 @@ namespace HotelHub.API.Controllers
 			Guid bookingId,
 			UpdateBookingDto dto)
 		{
-			// Get the authenticated user's ID from JWT claims.
 			var userIdClaim = User.FindFirstValue(
 				ClaimTypes.NameIdentifier);
 
@@ -175,6 +194,10 @@ namespace HotelHub.API.Controllers
 			return NoContent();
 		}
 
+		/// <summary>
+		/// Cancels a booking owned by the authenticated user.
+		/// </summary>
+		[Authorize(Policy = "UserOnly")]
 		[HttpDelete("{bookingId:Guid}")]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -184,7 +207,6 @@ namespace HotelHub.API.Controllers
 			Guid roomId,
 			Guid bookingId)
 		{
-			// Get the authenticated user's ID from JWT claims.
 			var userIdClaim = User.FindFirstValue(
 				ClaimTypes.NameIdentifier);
 

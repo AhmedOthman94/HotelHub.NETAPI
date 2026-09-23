@@ -3,9 +3,16 @@ using Microsoft.AspNetCore.Identity;
 
 namespace HotelHub.API.Data
 {
+	/// <summary>
+	/// Provides methods for seeding default roles and the initial administrator account.
+	/// </summary>
 	public static class IdentitySeeder
 	{
-		public static async Task SeedRoleAsync(RoleManager<IdentityRole<Guid>> roleManager)
+		/// <summary>
+		/// Creates the default application roles if they do not already exist.
+		/// </summary>
+		public static async Task SeedRoleAsync(
+			RoleManager<IdentityRole<Guid>> roleManager)
 		{
 			string[] roles =
 			[
@@ -13,19 +20,24 @@ namespace HotelHub.API.Data
 				"User"
 			];
 
-			foreach(var role in roles) 
+			foreach (var role in roles)
 			{
-				if(!await roleManager.RoleExistsAsync(role))
+				if (!await roleManager.RoleExistsAsync(role))
 				{
-					await roleManager.CreateAsync(new IdentityRole<Guid>(role));
+					await roleManager.CreateAsync(
+						new IdentityRole<Guid>(role)
+					);
 				}
 			}
 		}
 
+		/// <summary>
+		/// Creates the initial administrator account and assigns the Admin role.
+		/// </summary>
 		public static async Task SeedAdminAsync(
-							UserManager<ApplicationUser> userManager,
-							IConfiguration configuration
-							)
+			UserManager<ApplicationUser> userManager,
+			IConfiguration configuration
+		)
 		{
 			var email = configuration["AdminUser:Email"]
 						?? throw new InvalidOperationException(
@@ -46,7 +58,8 @@ namespace HotelHub.API.Data
 			const string adminRole = "Admin";
 
 			var admin = await userManager.FindByEmailAsync(email);
-			if (admin is null) 
+
+			if (admin is null)
 			{
 				admin = new ApplicationUser
 				{
@@ -57,11 +70,18 @@ namespace HotelHub.API.Data
 					EmailConfirmed = true
 				};
 
-				var createResult = await userManager.CreateAsync(admin, password);
+				var createResult = await userManager.CreateAsync(
+					admin,
+					password
+				);
+
 				if (!createResult.Succeeded)
 				{
 					throw new InvalidOperationException(
-							string.Join(", ", createResult.Errors.Select(e => e.Description))
+						string.Join(
+							", ",
+							createResult.Errors.Select(e => e.Description)
+						)
 					);
 				}
 			}
@@ -69,17 +89,18 @@ namespace HotelHub.API.Data
 			if (!await userManager.IsInRoleAsync(admin, adminRole))
 			{
 				var roleResult = await userManager
-									.AddToRoleAsync(admin, adminRole);
-				
+					.AddToRoleAsync(admin, adminRole);
+
 				if (!roleResult.Succeeded)
 				{
 					throw new InvalidOperationException(
-						string.Join(", ", roleResult.Errors.Select(e => e.Description))
+						string.Join(
+							", ",
+							roleResult.Errors.Select(e => e.Description)
+						)
 					);
 				}
 			}
-
-			
 		}
 	}
 }

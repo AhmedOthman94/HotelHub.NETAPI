@@ -23,7 +23,7 @@ Log.Logger = new LoggerConfiguration()
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSerilog((services, loggerConfiguration) => 
+builder.Services.AddSerilog((services, loggerConfiguration) =>
 {
 	loggerConfiguration
 		.ReadFrom.Configuration(builder.Configuration)
@@ -43,8 +43,6 @@ builder.Services.AddHttpLogging(options =>
 		| HttpLoggingFields.Duration;
 });
 
-// Add services to the container.
-
 builder.Services.AddControllers();
 
 builder.Services.AddStackExchangeRedisOutputCache(options =>
@@ -60,7 +58,7 @@ builder.Services.AddOutputCache();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateCountryDtoValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<UpdateCountryDtoValidator>();
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// Configure the OpenAPI document.
 builder.Services.AddOpenApi("v1", opts =>
 {
 	opts.AddDocumentTransformer((document, context, CancellationToken) =>
@@ -74,6 +72,7 @@ builder.Services.AddOpenApi("v1", opts =>
 
 		document.Components ??= new OpenApiComponents();
 		document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+
 		document.Components.SecuritySchemes.Add("Bearer", new OpenApiSecurityScheme
 		{
 			Type = SecuritySchemeType.Http,
@@ -120,13 +119,13 @@ builder.Services.Configure<EmailOptions>(
 
 builder.Services.AddScoped<IEmailService, EmailService>();
 
-// Identity
+// Configure ASP.NET Core Identity.
 builder.Services.AddIdentityCore<ApplicationUser>()
 				.AddRoles<IdentityRole<Guid>>()
 				.AddEntityFrameworkStores<ApplicationDbContext>()
 				.AddDefaultTokenProviders();
 
-// Identity options
+// Configure Identity password and user policies.
 builder.Services.Configure<IdentityOptions>(opts =>
 {
 	opts.User.RequireUniqueEmail = true;
@@ -138,7 +137,7 @@ builder.Services.Configure<IdentityOptions>(opts =>
 	opts.Password.RequireNonAlphanumeric = true;
 });
 
-// JWT
+// Configure JWT authentication.
 var jwtKey = builder.Configuration["Jwt:Key"]
 		?? throw new InvalidOperationException("JWT Key is not configured.");
 
@@ -167,7 +166,7 @@ builder.Services.AddRateLimiter(options =>
 			cancellationToken);
 	};
 
-	// General API policy
+	// General API rate limit.
 	options.AddFixedWindowLimiter("api", limiterOptions =>
 	{
 		limiterOptions.PermitLimit = 100;
@@ -175,7 +174,7 @@ builder.Services.AddRateLimiter(options =>
 		limiterOptions.QueueLimit = 0;
 	});
 
-	// Authentication policy
+	// Authentication rate limit.
 	options.AddFixedWindowLimiter("auth", limiterOptions =>
 	{
 		limiterOptions.PermitLimit = 10;
@@ -230,7 +229,6 @@ builder.Services.AddAuthorizationBuilder()
 		.RequireAuthenticatedUser()
 		.Build());
 
-
 var app = builder.Build();
 
 app.UseExceptionHandler();
@@ -250,7 +248,6 @@ using (var scope = app.Services.CreateScope())
 		builder.Configuration);
 }
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
 	app.MapOpenApi()

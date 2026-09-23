@@ -9,14 +9,20 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace HotelHub.API.Controllers
 {
-	[AllowAnonymous]
+	/// <summary>
+	/// Provides endpoints for managing hotel rooms.
+	/// </summary>
 	[Route("api/hotels/{hotelId:Guid}/rooms")]
 	[ApiController]
 	[EnableRateLimiting("api")]
-	public class RoomsController (IRoomService roomService,
+	public class RoomsController(IRoomService roomService,
 									IOutputCacheStore outputCacheStore)
 	: ControllerBase
 	{
+		/// <summary>
+		/// Retrieves a paginated list of rooms for a specific hotel.
+		/// </summary>
+		[AllowAnonymous]
 		[HttpGet]
 		[OutputCache(Duration = 60,
 						Tags = ["rooms"])]
@@ -47,6 +53,10 @@ namespace HotelHub.API.Controllers
 			return Ok(response);
 		}
 
+		/// <summary>
+		/// Retrieves a specific room by its identifier.
+		/// </summary>
+		[AllowAnonymous]
 		[HttpGet("{roomId:Guid}", Name = "GetRoomById")]
 		[ProducesResponseType(typeof
 			(ApiResponse<RoomDto>), StatusCodes.Status200OK)]
@@ -57,15 +67,19 @@ namespace HotelHub.API.Controllers
 		)
 		{
 			var room = await roomService.GetByIdAsync(hotelId, roomId);
-			
+
 			var response = ApiResponse<RoomDto>.Ok(
-								room, 
+								room,
 								"Room retrieved successfully."
 			);
 
 			return Ok(response);
 		}
 
+		/// <summary>
+		/// Creates a new room for a hotel.
+		/// </summary>
+		[Authorize(Policy = "AdminOnly")]
 		[HttpPost]
 		[ProducesResponseType(typeof
 			(ApiResponse<RoomDto>), StatusCodes.Status201Created)]
@@ -86,15 +100,19 @@ namespace HotelHub.API.Controllers
 
 			return CreatedAtAction(
 						nameof(GetRoomById),
-						new 
+						new
 						{
 							hotelId,
-							roomId =  room.Id
+							roomId = room.Id
 						},
 						response
 			);
 		}
 
+		/// <summary>
+		/// Updates an existing room.
+		/// </summary>
+		[Authorize(Policy = "AdminOnly")]
 		[HttpPut("{roomId:Guid}")]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
 		[ProducesResponseType(typeof
@@ -106,7 +124,7 @@ namespace HotelHub.API.Controllers
 		)
 		{
 			await roomService.UpdateAsync(
-					hotelId, 
+					hotelId,
 					roomId,
 					dto
 			);
@@ -116,6 +134,10 @@ namespace HotelHub.API.Controllers
 			return NoContent();
 		}
 
+		/// <summary>
+		/// Deletes a room by its identifier.
+		/// </summary>
+		[Authorize(Policy = "AdminOnly")]
 		[HttpDelete("{roomId:Guid}")]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
 		[ProducesResponseType(typeof
