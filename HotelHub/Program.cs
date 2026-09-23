@@ -16,12 +16,20 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
+using Serilog;
+
+Log.Logger = new LoggerConfiguration()
+	.CreateBootstrapLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
+builder.Services.AddSerilog((services, loggerConfiguration) => 
+{
+	loggerConfiguration
+		.ReadFrom.Configuration(builder.Configuration)
+		.ReadFrom.Services(services)
+		.Enrich.FromLogContext();
+});
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
@@ -254,6 +262,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseSerilogRequestLogging();
 app.UseHttpLogging();
 
 app.UseRateLimiter();
@@ -267,4 +276,15 @@ app.MapHealthChecks("/health")
 
 app.MapControllers();
 
-app.Run();
+try
+{
+	app.Run();
+}
+catch (Exception ex)
+{
+	Log.Fatal(ex, "Application terminated unexpectedly.");
+}
+finally
+{
+	Log.CloseAndFlush();
+}
