@@ -47,6 +47,14 @@ builder.Services.AddHttpLogging(options =>
 
 builder.Services.AddControllers();
 
+builder.Services.AddStackExchangeRedisOutputCache(options =>
+{
+	options.Configuration =
+		builder.Configuration.GetConnectionString("Redis");
+
+	options.InstanceName = "HotelHub:";
+});
+
 builder.Services.AddOutputCache();
 
 builder.Services.AddValidatorsFromAssemblyContaining<CreateCountryDtoValidator>();
@@ -266,10 +274,11 @@ app.UseSerilogRequestLogging();
 app.UseHttpLogging();
 
 app.UseRateLimiter();
-app.UseOutputCache();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseOutputCache();
 
 app.MapHealthChecks("/health")
 	.AllowAnonymous();
