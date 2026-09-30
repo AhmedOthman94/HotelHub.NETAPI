@@ -5,6 +5,7 @@ using HotelHub.API.Entity;
 using HotelHub.API.Enums;
 using HotelHub.API.Extensions;
 using HotelHub.API.Models;
+using HotelHub.API.Models.Exceptions;
 using HotelHub.API.Services.IServices;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,14 +25,14 @@ namespace HotelHub.API.Services
 			// Check-out must be after check-in.
 			if (dto.CheckIn >= dto.CheckOut)
 			{
-				throw new ArgumentException(
+				throw new BadRequestException(
 					"Check-out date must be after check-in date.");
 			}
 
 			// Validate the number of guests.
 			if (dto.Guests <= 0)
 			{
-				throw new ArgumentException(
+				throw new BadRequestException(
 					"Guests must be greater than zero.");
 			}
 
@@ -51,7 +52,7 @@ namespace HotelHub.API.Services
 			// Make sure the number of guests does not exceed room capacity.
 			if (dto.Guests > room.Capacity)
 			{
-				throw new ArgumentException(
+				throw new BadRequestException(
 					$"The room capacity is {room.Capacity} guests.");
 			}
 
@@ -71,7 +72,7 @@ namespace HotelHub.API.Services
 
 			if (hasConflict)
 			{
-				throw new InvalidOperationException(
+				throw new ConflictException(
 					"The room is already booked for the selected dates.");
 			}
 
@@ -133,14 +134,14 @@ namespace HotelHub.API.Services
 			// Only the user who created the booking can cancel it.
 			if (booking.UserId != userId)
 			{
-				throw new UnauthorizedAccessException(
+				throw new ForbiddenException(
 					"You are not allowed to cancel this booking.");
 			}
 
 			// Prevent cancelling an already cancelled booking.
 			if (booking.Status == BookingStatus.Cancelled)
 			{
-				throw new InvalidOperationException(
+				throw new ConflictException(
 					"Booking is already cancelled.");
 			}
 
@@ -259,7 +260,7 @@ namespace HotelHub.API.Services
 			// Validate the booking dates.
 			if (dto.CheckIn >= dto.CheckOut)
 			{
-				throw new ArgumentException(
+				throw new BadRequestException(
 					"Check-out date must be after check-in date.");
 			}
 
@@ -280,28 +281,28 @@ namespace HotelHub.API.Services
 			// Only the owner of the booking can update it.
 			if (booking.UserId != userId)
 			{
-				throw new UnauthorizedAccessException(
+				throw new ForbiddenException(
 					"You are not allowed to update this booking.");
 			}
 
 			// Cancelled bookings cannot be modified.
 			if (booking.Status == BookingStatus.Cancelled)
 			{
-				throw new InvalidOperationException(
+				throw new ConflictException(
 					"Cancelled bookings cannot be updated.");
 			}
 
 			// Validate the number of guests.
 			if (dto.Guests <= 0)
 			{
-				throw new ArgumentException(
+				throw new BadRequestException(
 					"Guests must be greater than zero.");
 			}
 
 			// Make sure the new guest count fits the room capacity.
 			if (dto.Guests > booking.Room.Capacity)
 			{
-				throw new ArgumentException(
+				throw new BadRequestException(
 					$"The room capacity is {booking.Room.Capacity} guests.");
 			}
 
@@ -317,7 +318,7 @@ namespace HotelHub.API.Services
 
 			if (hasConflict)
 			{
-				throw new InvalidOperationException(
+				throw new ConflictException(
 					"The room is already booked for the selected dates.");
 			}
 
@@ -355,7 +356,7 @@ namespace HotelHub.API.Services
 
 			if (!isHotelAdmin)
 			{
-				throw new UnauthorizedAccessException(
+				throw new ForbiddenException(
 					"You are not authorized to approve bookings for this hotel.");
 			}
 
@@ -374,13 +375,13 @@ namespace HotelHub.API.Services
 
 			if (booking.Status == BookingStatus.Cancelled)
 			{
-				throw new InvalidOperationException(
+				throw new ConflictException(
 					"Cancelled bookings cannot be approved.");
 			}
 
 			if (booking.Status == BookingStatus.Confirmed)
 			{
-				throw new InvalidOperationException(
+				throw new ConflictException(
 					"Booking is already confirmed.");
 			}
 

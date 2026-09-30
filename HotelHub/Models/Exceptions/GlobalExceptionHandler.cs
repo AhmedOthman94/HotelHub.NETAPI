@@ -1,4 +1,5 @@
 ﻿using HotelHub.API.Models;
+using HotelHub.API.Models.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace HotelHub.API.Exceptions;
@@ -20,19 +21,19 @@ public class GlobalExceptionHandler(
 
 		var (statusCode, message) = exception switch
 		{
-			KeyNotFoundException =>
+			NotFoundException =>
 				(StatusCodes.Status404NotFound,
 				 exception.Message),
 
-			ArgumentException =>
+			BadRequestException =>
 				(StatusCodes.Status400BadRequest,
 				 exception.Message),
 
-			UnauthorizedAccessException =>
-				(StatusCodes.Status401Unauthorized,
+			ForbiddenException =>
+				(StatusCodes.Status403Forbidden,
 				 exception.Message),
 
-			InvalidOperationException =>
+			ConflictException =>
 				(StatusCodes.Status409Conflict,
 				 exception.Message),
 

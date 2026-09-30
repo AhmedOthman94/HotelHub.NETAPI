@@ -4,6 +4,7 @@ using HotelHub.API.Data;
 using HotelHub.API.Exceptions;
 using HotelHub.API.Models;
 using HotelHub.API.Models.Auth;
+using HotelHub.API.Models.Exceptions;
 using HotelHub.API.Services;
 using HotelHub.API.Services.IServices;
 using HotelHub.API.Validators;
@@ -18,6 +19,8 @@ using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 using Serilog;
 
+
+
 Log.Logger = new LoggerConfiguration()
 	.CreateBootstrapLogger();
 
@@ -31,8 +34,10 @@ builder.Services.AddSerilog((services, loggerConfiguration) =>
 		.Enrich.FromLogContext();
 });
 
+
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+
 
 builder.Services.AddHttpLogging(options =>
 {
@@ -139,7 +144,7 @@ builder.Services.Configure<IdentityOptions>(opts =>
 
 // Configure JWT authentication.
 var jwtKey = builder.Configuration["Jwt:Key"]
-		?? throw new InvalidOperationException("JWT Key is not configured.");
+		?? throw new ConflictException("JWT Key is not configured.");
 
 var key = new SymmetricSecurityKey(
 	Encoding.UTF8.GetBytes(jwtKey));
@@ -281,6 +286,7 @@ app.MapHealthChecks("/health")
 	.AllowAnonymous();
 
 app.MapControllers();
+
 
 try
 {

@@ -1,4 +1,5 @@
 ﻿using HotelHub.API.Models.Auth;
+using HotelHub.API.Models.Exceptions;
 using Microsoft.AspNetCore.Identity;
 
 namespace HotelHub.API.Data
@@ -40,19 +41,19 @@ namespace HotelHub.API.Data
 		)
 		{
 			var email = configuration["AdminUser:Email"]
-						?? throw new InvalidOperationException(
+						?? throw new ConflictException(
 						"Admin email must be configured.");
 
 			var password = configuration["AdminUser:Password"]
-							?? throw new InvalidOperationException(
+							?? throw new ConflictException(
 							"Admin password must be configured.");
 
 			var firstName = configuration["AdminUser:FirstName"]
-							?? throw new InvalidOperationException(
+							?? throw new ConflictException(
 							"First name must be configured.");
 
 			var lastName = configuration["AdminUser:LastName"]
-							?? throw new InvalidOperationException(
+							?? throw new ConflictException(
 							"Last name must be configured.");
 
 			const string adminRole = "Admin";
@@ -77,7 +78,7 @@ namespace HotelHub.API.Data
 
 				if (!createResult.Succeeded)
 				{
-					throw new InvalidOperationException(
+					throw new ConflictException(
 						string.Join(
 							", ",
 							createResult.Errors.Select(e => e.Description)
@@ -93,7 +94,7 @@ namespace HotelHub.API.Data
 
 				if (!roleResult.Succeeded)
 				{
-					throw new InvalidOperationException(
+					throw new ConflictException(
 						string.Join(
 							", ",
 							roleResult.Errors.Select(e => e.Description)

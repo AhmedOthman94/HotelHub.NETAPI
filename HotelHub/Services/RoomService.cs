@@ -5,6 +5,7 @@ using HotelHub.API.Entity;
 using HotelHub.API.Enums;
 using HotelHub.API.Extensions;
 using HotelHub.API.Models;
+using HotelHub.API.Models.Exceptions;
 using HotelHub.API.Services.IServices;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,7 +22,7 @@ namespace HotelHub.API.Services
 										.AnyAsync(h => h.Id == hotelId);
 			if(!hotelExists)
 			{
-				throw new KeyNotFoundException(
+				throw new NotFoundException(
 								"Hotel was not found.");
 			}
 
@@ -41,7 +42,7 @@ namespace HotelHub.API.Services
 
 			if (!hotelExists)
 			{
-				throw new KeyNotFoundException(
+				throw new NotFoundException(
 							"Hotel was not found.");
 			}
 
@@ -52,7 +53,7 @@ namespace HotelHub.API.Services
 
 			if (room is null)
 			{
-				throw new KeyNotFoundException(
+				throw new NotFoundException(
 								"Room was not found.");
 			}
 
@@ -75,7 +76,7 @@ namespace HotelHub.API.Services
 
 			if (!hotelExists)
 			{
-				throw new KeyNotFoundException(
+				throw new NotFoundException(
 					"Hotel was not found.");
 			}
 
@@ -137,7 +138,7 @@ namespace HotelHub.API.Services
 
 			if (!hotelExists)
 			{
-				throw new KeyNotFoundException(
+				throw new NotFoundException(
 							"Hotel was not found.");
 			}
 
@@ -148,7 +149,7 @@ namespace HotelHub.API.Services
 
 			if (room is null)
 			{
-				throw new KeyNotFoundException(
+				throw new NotFoundException(
 								"Room was not found.");
 			}
 
@@ -161,7 +162,7 @@ namespace HotelHub.API.Services
 										.AnyAsync(h => h.Id == hotelId);
 			if (!hotelExists)
 			{
-				throw new KeyNotFoundException(
+				throw new NotFoundException(
 							"Hotel was not found.");
 			}
 
@@ -172,7 +173,7 @@ namespace HotelHub.API.Services
 
 			if (room is null)
 			{
-				throw new KeyNotFoundException(
+				throw new NotFoundException(
 							"Room was not found.");
 			}
 
