@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.TagHelpers.Cache;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -50,15 +51,13 @@ builder.Services.AddHttpLogging(options =>
 
 builder.Services.AddControllers();
 
-builder.Services.AddStackExchangeRedisOutputCache(options =>
+builder.Services.AddStackExchangeRedisCache(opts => 
 {
-	options.Configuration =
+	opts.Configuration =
 		builder.Configuration.GetConnectionString("Redis");
-
-	options.InstanceName = "HotelHub:";
 });
 
-builder.Services.AddOutputCache();
+builder.Services.AddScoped<ICacheService, RedisCacheService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<CreateCountryDtoValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<UpdateCountryDtoValidator>();
@@ -280,7 +279,6 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseOutputCache();
 
 app.MapHealthChecks("/health")
 	.AllowAnonymous();

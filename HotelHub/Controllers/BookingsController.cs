@@ -19,8 +19,7 @@ namespace HotelHub.API.Controllers
 	[Route("api/hotels/{hotelId:Guid}/rooms/{roomId:Guid}/bookings")]
 	[EnableRateLimiting("api")]
 	public class BookingsController(
-		IBookingService bookingService,
-		IOutputCacheStore outputCacheStore)
+		IBookingService bookingService)
 		: ControllerBase
 	{
 		/// <summary>
@@ -28,8 +27,6 @@ namespace HotelHub.API.Controllers
 		/// </summary>
 		[Authorize(Policy = "AuthenticatedUser")]
 		[HttpGet]
-		[OutputCache(Duration = 60,
-						Tags = ["bookings"])]
 		[ProducesResponseType(
 			typeof(ApiResponse<PagedResult<BookingDto>>),
 			StatusCodes.Status200OK)]
@@ -108,7 +105,6 @@ namespace HotelHub.API.Controllers
 				userId,
 				dto);
 
-			await outputCacheStore.EvictByTagAsync("bookings", default);
 
 			var response = ApiResponse<BookingDto>.CreatedAt(
 				booking,
@@ -153,9 +149,7 @@ namespace HotelHub.API.Controllers
 				bookingId,
 				adminUserId);
 
-			await outputCacheStore.EvictByTagAsync(
-				"bookings",
-				default);
+	
 
 			return NoContent();
 		}
@@ -189,7 +183,6 @@ namespace HotelHub.API.Controllers
 				userId,
 				dto);
 
-			await outputCacheStore.EvictByTagAsync("bookings", default);
 
 			return NoContent();
 		}
@@ -220,7 +213,6 @@ namespace HotelHub.API.Controllers
 				bookingId,
 				userId);
 
-			await outputCacheStore.EvictByTagAsync("bookings", default);
 
 			return NoContent();
 		}

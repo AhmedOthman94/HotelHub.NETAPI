@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using HotelHub.API.Constants;
 using HotelHub.API.Data;
 using HotelHub.API.DTOs;
 using HotelHub.API.Entity;
@@ -11,7 +12,8 @@ using Microsoft.EntityFrameworkCore;
 namespace HotelHub.API.Services
 {
 	public class CountryService (ApplicationDbContext context,
-									IMapper mapper
+									IMapper mapper,
+									ICacheService cache
 	)
 	: ICountryService
 	{
@@ -47,6 +49,10 @@ namespace HotelHub.API.Services
 			}
 			context.Countries.Remove(country);
 			await context.SaveChangesAsync();
+
+			await cache.RemoveAsync(
+					CacheKeys.Country(id)
+			);
 
 			return true;
 		}
@@ -85,6 +91,15 @@ namespace HotelHub.API.Services
 
 		public async Task<CountryDto?> GetCountryByIdAsync(Guid id)
 		{
+			var cacheKey = CacheKeys.Country(id);
+
+			var cachedCountry = await cache.GetAsync<CountryDto>(cacheKey);
+
+			if (cachedCountry is not null)
+			{
+				return cachedCountry;
+			}
+
 			var country = await context.Countries
 									.AsNoTracking()
 									.FirstOrDefaultAsync(c => c.Id == id);
@@ -92,8 +107,11 @@ namespace HotelHub.API.Services
 			{
 				return null;
 			}
-
 			var countryDto = mapper.Map<CountryDto>(country);
+
+			await cache.SetAsync(cacheKey,
+				countryDto,
+				TimeSpan.FromMinutes(30));
 
 			return countryDto;
 		}
@@ -109,6 +127,10 @@ namespace HotelHub.API.Services
 
 			mapper.Map(dto, country);
 			await context.SaveChangesAsync();
+
+			await cache.RemoveAsync(
+					CacheKeys.Country(id)
+			);
 
 			return true;
 		}

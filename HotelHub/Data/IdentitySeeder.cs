@@ -41,19 +41,19 @@ namespace HotelHub.API.Data
 		)
 		{
 			var email = configuration["AdminUser:Email"]
-						?? throw new ConflictException(
+						?? throw new InvalidOperationException(
 						"Admin email must be configured.");
 
 			var password = configuration["AdminUser:Password"]
-							?? throw new ConflictException(
+							?? throw new InvalidOperationException(
 							"Admin password must be configured.");
 
 			var firstName = configuration["AdminUser:FirstName"]
-							?? throw new ConflictException(
+							?? throw new InvalidOperationException(
 							"First name must be configured.");
 
 			var lastName = configuration["AdminUser:LastName"]
-							?? throw new ConflictException(
+							?? throw new InvalidOperationException(
 							"Last name must be configured.");
 
 			const string adminRole = "Admin";
@@ -78,7 +78,7 @@ namespace HotelHub.API.Data
 
 				if (!createResult.Succeeded)
 				{
-					throw new ConflictException(
+					throw new InvalidOperationException(
 						string.Join(
 							", ",
 							createResult.Errors.Select(e => e.Description)
@@ -94,7 +94,7 @@ namespace HotelHub.API.Data
 
 				if (!roleResult.Succeeded)
 				{
-					throw new ConflictException(
+					throw new InvalidOperationException(
 						string.Join(
 							", ",
 							roleResult.Errors.Select(e => e.Description)

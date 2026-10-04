@@ -17,7 +17,6 @@ namespace HotelHub.API.Controllers
 	[EnableRateLimiting("api")]
 	public class CountriesController(
 							ICountryService service,
-							IOutputCacheStore outputCacheStore,
 							IValidator<CreateCountryDto> createValidator,
 							IValidator<UpdateCountryDto> updateValidator
 	)
@@ -28,8 +27,6 @@ namespace HotelHub.API.Controllers
 		/// </summary>
 		[Authorize(Policy = "AuthenticatedUser")]
 		[HttpGet]
-		[OutputCache(Duration = 60,
-						Tags = ["countries"])]
 		[ProducesResponseType(
 				typeof(ApiResponse<PagedResult<CountryDto>>),
 				StatusCodes.Status200OK)]
@@ -106,8 +103,6 @@ namespace HotelHub.API.Controllers
 
 			var country = await service.CreateCountryAsync(dto);
 
-			await outputCacheStore.EvictByTagAsync("countries",
-								default);
 
 			var successResponse = ApiResponse<CountryDto>.CreatedAt(
 									country,
@@ -166,8 +161,6 @@ namespace HotelHub.API.Controllers
 				return NotFound(response);
 			}
 
-			await outputCacheStore.EvictByTagAsync("countries",
-							default);
 
 			return NoContent();
 		}
@@ -192,8 +185,6 @@ namespace HotelHub.API.Controllers
 				return NotFound(response);
 			}
 
-			await outputCacheStore.EvictByTagAsync("countries",
-							default);
 
 			return NoContent();
 		}

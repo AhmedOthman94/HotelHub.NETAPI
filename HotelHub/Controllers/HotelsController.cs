@@ -16,7 +16,6 @@ namespace HotelHub.API.Controllers
 	[ApiController]
 	[EnableRateLimiting("api")]
 	public class HotelsController(IHotelService service,
-								IOutputCacheStore outputCacheStore,
 								IValidator<CreateHotelDto> createValidator,
 								IValidator<UpdateHotelDto> updateValidator
 	)
@@ -27,8 +26,6 @@ namespace HotelHub.API.Controllers
 		/// </summary>
 		[Authorize(Policy = "AuthenticatedUser")]
 		[HttpGet]
-		[OutputCache(Duration = 60,
-						Tags = ["hotels"])]
 		[ProducesResponseType(
 			typeof(ApiResponse<PagedResult<HotelDto>>),
 			StatusCodes.Status200OK)]
@@ -107,7 +104,6 @@ namespace HotelHub.API.Controllers
 
 			var hotel = await service.CreateHotelAsync(dto);
 
-			await outputCacheStore.EvictByTagAsync("hotels", default);
 
 			var successResponse = ApiResponse<HotelDto>.CreatedAt(
 									hotel,
@@ -166,7 +162,6 @@ namespace HotelHub.API.Controllers
 				return NotFound(response);
 			}
 
-			await outputCacheStore.EvictByTagAsync("hotels", default);
 
 			return NoContent();
 		}
@@ -191,7 +186,6 @@ namespace HotelHub.API.Controllers
 				return NotFound(response);
 			}
 
-			await outputCacheStore.EvictByTagAsync("hotels", default);
 
 			return NoContent();
 		}
