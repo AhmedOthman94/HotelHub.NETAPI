@@ -37,6 +37,8 @@ namespace HotelHub.API.Controllers
 					[FromQuery] int pageNumber = 1,
 					[FromQuery] int pageSize = 10)
 		{
+
+			
 			var countries = await service.GetAllCountriesAsync(
 				searchTerm,
 				sorting,

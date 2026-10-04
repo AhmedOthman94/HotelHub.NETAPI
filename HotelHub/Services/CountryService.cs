@@ -58,11 +58,26 @@ namespace HotelHub.API.Services
 		}
 
 		public async Task<PagedResult<CountryDto>> GetAllCountriesAsync(
-							string? searchTerm,
-							SortingRequest? sorting,
-							int pageNumber,
-							int pageSize)
+				string? searchTerm,
+				SortingRequest? sorting,
+				int pageNumber,
+				int pageSize)
 		{
+			var cacheKey = CacheKeys.CountriesList(
+				searchTerm,
+				sorting,
+				pageNumber,
+				pageSize);
+
+			var cachedResult =
+				await cache.GetAsync<PagedResult<CountryDto>>(
+					cacheKey);
+
+			if (cachedResult is not null)
+			{
+				return cachedResult;
+			}
+
 			var query = context.Countries
 				.AsNoTracking()
 				.Search(
@@ -86,7 +101,15 @@ namespace HotelHub.API.Services
 				pageNumber,
 				pageSize);
 
-			return result.MapTo<Country, CountryDto>(mapper);
+			var mappedResult =
+				result.MapTo<Country, CountryDto>(mapper);
+
+			await cache.SetAsync(
+				cacheKey,
+				mappedResult,
+				TimeSpan.FromMinutes(5));
+
+			return mappedResult;
 		}
 
 		public async Task<CountryDto?> GetCountryByIdAsync(Guid id)
