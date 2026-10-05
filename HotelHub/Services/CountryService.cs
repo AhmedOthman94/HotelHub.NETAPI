@@ -6,6 +6,7 @@ using HotelHub.API.Entity;
 using HotelHub.API.Enums;
 using HotelHub.API.Extensions;
 using HotelHub.API.Models;
+using HotelHub.API.Services.Caching;
 using HotelHub.API.Services.IServices;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +14,8 @@ namespace HotelHub.API.Services
 {
 	public class CountryService (ApplicationDbContext context,
 									IMapper mapper,
-									ICacheService cache
+									ICacheService cache,
+									ICacheVersionService cacheVersion
 	)
 	: ICountryService
 	{
@@ -33,6 +35,9 @@ namespace HotelHub.API.Services
 
 			context.Countries.Add(country);
 			await context.SaveChangesAsync();
+
+			await cacheVersion.IncrementAsync(
+					CacheKeys.CountriesVersion());
 
 			var countryDto = mapper.Map<CountryDto>(country);
 
@@ -54,6 +59,9 @@ namespace HotelHub.API.Services
 					CacheKeys.Country(id)
 			);
 
+			await cacheVersion.IncrementAsync(
+					CacheKeys.CountriesVersion());
+
 			return true;
 		}
 
@@ -63,7 +71,12 @@ namespace HotelHub.API.Services
 				int pageNumber,
 				int pageSize)
 		{
+			var version = await cacheVersion.GetAsync(
+				CacheKeys.CountriesVersion()
+			);
+
 			var cacheKey = CacheKeys.CountriesList(
+				version,
 				searchTerm,
 				sorting,
 				pageNumber,
@@ -154,6 +167,9 @@ namespace HotelHub.API.Services
 			await cache.RemoveAsync(
 					CacheKeys.Country(id)
 			);
+
+			await cacheVersion.IncrementAsync(
+					CacheKeys.CountriesVersion());
 
 			return true;
 		}

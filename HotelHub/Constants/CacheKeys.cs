@@ -11,10 +11,14 @@ namespace HotelHub.API.Constants
 		public static string Countries()
 			=> "Countries";
 
+		public static string CountriesVersion()
+		=> "countries:version";
+
 		public static string Hotel(Guid id)
 			=> $"hotel:{id}";
 
 		public static string CountriesList(
+				long version,
 				string? searchTerm,
 				SortingRequest? sorting,
 				int pageNumber,
@@ -34,7 +38,7 @@ namespace HotelHub.API.Constants
 					? SortDirection.Ascending
 					: sorting.SortDirection;
 
-			return $"countries:list:" +
+			return $"countries:v{version}:list:" +
 				   $"search={search}:" +
 				   $"sort={sort}:" +
 				   $"dir={direction}:" +

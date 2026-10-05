@@ -6,6 +6,7 @@ using HotelHub.API.Models;
 using HotelHub.API.Models.Auth;
 using HotelHub.API.Models.Exceptions;
 using HotelHub.API.Services;
+using HotelHub.API.Services.Caching;
 using HotelHub.API.Services.IServices;
 using HotelHub.API.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -17,8 +18,12 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using Polly;
+using Polly.Retry;
+using Polly.Timeout;
 using Scalar.AspNetCore;
 using Serilog;
+using StackExchange.Redis;
 
 
 
@@ -51,11 +56,59 @@ builder.Services.AddHttpLogging(options =>
 
 builder.Services.AddControllers();
 
-builder.Services.AddStackExchangeRedisCache(opts => 
+var redisConnection =
+	builder.Configuration.GetConnectionString("Redis");
+
+builder.Services.AddStackExchangeRedisCache(options =>
 {
-	opts.Configuration =
-		builder.Configuration.GetConnectionString("Redis");
+	options.Configuration = redisConnection;
 });
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(
+	_ =>
+	{
+		var configuration =
+			ConfigurationOptions.Parse(redisConnection!);
+
+		configuration.AbortOnConnectFail = false;
+		configuration.ConnectTimeout = 5000;
+		configuration.AsyncTimeout = 5000;
+
+		return ConnectionMultiplexer.Connect(configuration);
+	});
+
+builder.Services.AddResiliencePipeline(
+	"redis-retry",
+	builder =>
+	{
+		builder.AddRetry(new RetryStrategyOptions
+		{
+			ShouldHandle = new PredicateBuilder()
+				.Handle<RedisException>()
+				.Handle<TimeoutRejectedException>(),
+
+			MaxRetryAttempts = 2,
+
+			Delay = TimeSpan.FromMilliseconds(200),
+
+			BackoffType = DelayBackoffType.Exponential,
+
+			UseJitter = true,
+
+			OnRetry = args =>
+			{
+				Console.WriteLine(
+					$"Redis retry attempt: {args.AttemptNumber + 1}");
+
+				return default;
+			}
+		});
+
+		builder.AddTimeout(
+			TimeSpan.FromSeconds(1));
+	});
+
+builder.Services.AddScoped<ICacheVersionService, RedisCacheVersionService>();
 
 builder.Services.AddScoped<ICacheService, RedisCacheService>();
 
