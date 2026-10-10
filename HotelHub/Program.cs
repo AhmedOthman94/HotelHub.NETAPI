@@ -1,4 +1,5 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using FluentValidation;
 using HotelHub.API.Data;
 using HotelHub.API.Exceptions;
@@ -24,6 +25,7 @@ using Polly.Timeout;
 using Scalar.AspNetCore;
 using Serilog;
 using StackExchange.Redis;
+using Asp.Versioning;
 
 
 
@@ -114,6 +116,23 @@ builder.Services.AddScoped<ICacheService, RedisCacheService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<CreateCountryDtoValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<UpdateCountryDtoValidator>();
+
+builder.Services.AddApiVersioning(opts =>
+{
+	opts.DefaultApiVersion = new ApiVersion(1, 0);
+	opts.AssumeDefaultVersionWhenUnspecified = false;
+	opts.ReportApiVersions = true;
+	opts.ApiVersionReader = ApiVersionReader.Combine(
+		new QueryStringApiVersionReader(),
+		new HeaderApiVersionReader("api-version")
+	);
+}).AddMvc()
+.AddApiExplorer(opts =>
+{
+	opts.GroupNameFormat = "'v'VVV";
+	opts.SubstituteApiVersionInUrl = false;
+});
+
 
 // Configure the OpenAPI document.
 builder.Services.AddOpenApi("v1", opts =>
@@ -240,6 +259,10 @@ builder.Services.AddRateLimiter(options =>
 	});
 });
 
+
+
+
+
 builder.Services.AddAuthentication(opts =>
 {
 	opts.DefaultAuthenticateScheme =
@@ -287,6 +310,7 @@ builder.Services.AddAuthorizationBuilder()
 		.Build());
 
 var app = builder.Build();
+
 
 app.UseExceptionHandler();
 

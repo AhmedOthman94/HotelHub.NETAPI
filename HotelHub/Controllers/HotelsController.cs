@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using Asp.Versioning;
+using FluentValidation;
 using HotelHub.API.DTOs;
 using HotelHub.API.Models;
 using HotelHub.API.Services.IServices;
@@ -12,6 +13,7 @@ namespace HotelHub.API.Controllers
 	/// <summary>
 	/// Provides endpoints for managing hotels.
 	/// </summary>
+	[ApiVersion("1.0")]
 	[Route("api/hotels")]
 	[ApiController]
 	[EnableRateLimiting("api")]
