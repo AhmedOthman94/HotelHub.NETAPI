@@ -1,5 +1,6 @@
 using System.Text;
 using System.Threading.RateLimiting;
+using Asp.Versioning;
 using FluentValidation;
 using HotelHub.API.Data;
 using HotelHub.API.Exceptions;
@@ -12,6 +13,7 @@ using HotelHub.API.Services.IServices;
 using HotelHub.API.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.TagHelpers.Cache;
@@ -25,7 +27,6 @@ using Polly.Timeout;
 using Scalar.AspNetCore;
 using Serilog;
 using StackExchange.Redis;
-using Asp.Versioning;
 
 
 
@@ -182,7 +183,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(opts =>
 });
 
 builder.Services.AddHealthChecks()
-	.AddDbContextCheck<ApplicationDbContext>();
+.AddDbContextCheck<ApplicationDbContext>(
+	name: "Sql Server",
+	tags: ["ready"]
+).AddRedis(
+builder.Configuration.GetConnectionString("Redis")!,
+name : "Redis",
+tags : ["ready"]
+);
 
 builder.Services.AddScoped<ICountryService, CountryService>();
 builder.Services.AddScoped<IHotelService, HotelService>();
@@ -357,8 +365,29 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 
-app.MapHealthChecks("/health")
-	.AllowAnonymous();
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+	ResponseWriter = async (context, report) =>
+	{
+		context.Response.ContentType = "application/json";
+
+		var response = new
+		{
+			status = report.Status.ToString(),
+			totalDurationMs = report.TotalDuration.TotalMilliseconds,
+			checks = report.Entries.Select(entry => new
+			{
+				name = entry.Key,
+				status = entry.Value.Status.ToString(),
+				description = entry.Value.Description,
+				durationMs = entry.Value.Duration.TotalMilliseconds,
+				error = entry.Value.Exception?.Message
+			})
+		};
+
+		await context.Response.WriteAsJsonAsync(response);
+	}
+}).AllowAnonymous();
 
 app.MapControllers();
 
