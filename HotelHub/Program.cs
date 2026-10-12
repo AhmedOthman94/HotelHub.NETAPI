@@ -322,19 +322,19 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 
-using (var scope = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
-	var roleManager = scope.ServiceProvider
-		.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+	using (var scope = app.Services.CreateScope())
+	{
+		var roleManager = scope.ServiceProvider
+			.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
 
-	var userManager = scope.ServiceProvider
-		.GetRequiredService<UserManager<ApplicationUser>>();
+		var userManager = scope.ServiceProvider
+			.GetRequiredService<UserManager<ApplicationUser>>();
 
-	await IdentitySeeder.SeedRoleAsync(roleManager);
-
-	await IdentitySeeder.SeedAdminAsync(
-		userManager,
-		builder.Configuration);
+		await IdentitySeeder.SeedRoleAsync(roleManager);
+		await IdentitySeeder.SeedAdminAsync(userManager, builder.Configuration);
+	}
 }
 
 if (app.Environment.IsDevelopment())
@@ -404,3 +404,4 @@ finally
 {
 	Log.CloseAndFlush();
 }
+public partial class Program { }
